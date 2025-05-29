@@ -1,15 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-  Modal,
-  TextInput,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, TextInput, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/common/Card';
 import { Loading } from '../components/common/Loading';

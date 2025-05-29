@@ -1,15 +1,6 @@
 import axios from 'axios';
 import { Sensor, LeituraSensor, Local, Evento, Alerta, Usuario } from '../types';
-import { 
-  MOCK_SENSORES, 
-  MOCK_LEITURAS, 
-  MOCK_LOCAIS, 
-  MOCK_EVENTOS, 
-  MOCK_ALERTAS, 
-  MOCK_USUARIOS,
-  delay,
-  generateId 
-} from './mockData';
+import { MOCK_SENSORES, MOCK_LEITURAS, MOCK_LOCAIS, MOCK_EVENTOS, MOCK_ALERTAS, MOCK_USUARIOS, delay, generateId } from './mockData';
 
 // Configuração base da API - altere a URL conforme sua API Java
 const API_BASE_URL = 'http://localhost:8080/api'; // Ajuste conforme sua API

@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  RefreshControl,
-  Alert,
-} from 'react-native';
+import { View, Text, ScrollView, StyleSheet, RefreshControl, Alert } from 'react-native';
 import { Card } from '../components/common/Card';
 import { Loading } from '../components/common/Loading';
 import { COLORS } from '../constants/colors';

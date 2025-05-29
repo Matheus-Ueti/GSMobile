@@ -1,12 +1,11 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { SensoresScreen } from '../screens/SensoresScreen';
 import { AlertasScreen } from '../screens/AlertasScreen';
 import { EventosScreen } from '../screens/EventosScreen';
-import { ConfiguracoesScreen } from '../screens/ConfiguracoesScreen';
+import { ConfigNavigator } from './ConfigNavigator';
 import { COLORS } from '../constants/colors';
 
 const Tab = createBottomTabNavigator();
@@ -55,17 +54,7 @@ export const TabNavigator: React.FC = () => {
           fontSize: 12,
           fontWeight: '500',
         },
-        headerStyle: {
-          backgroundColor: COLORS.primary,
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-        headerTintColor: COLORS.textLight,
-        headerTitleStyle: {
-          fontWeight: 'bold',
-          fontSize: 18,
-        },
-        headerTitleAlign: 'center',
+        headerShown: false,
       })}
     >
       <Tab.Screen 
@@ -74,6 +63,18 @@ export const TabNavigator: React.FC = () => {
         options={{
           title: 'EcoSafe Dashboard',
           tabBarLabel: 'Início',
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: COLORS.primary,
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          headerTintColor: COLORS.textLight,
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            fontSize: 18,
+          },
+          headerTitleAlign: 'center',
         }}
       />
       <Tab.Screen 
@@ -82,6 +83,18 @@ export const TabNavigator: React.FC = () => {
         options={{
           title: 'Gerenciar Sensores',
           tabBarLabel: 'Sensores',
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: COLORS.primary,
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          headerTintColor: COLORS.textLight,
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            fontSize: 18,
+          },
+          headerTitleAlign: 'center',
         }}
       />
       <Tab.Screen 
@@ -90,6 +103,18 @@ export const TabNavigator: React.FC = () => {
         options={{
           title: 'Alertas Ambientais',
           tabBarLabel: 'Alertas',
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: COLORS.primary,
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          headerTintColor: COLORS.textLight,
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            fontSize: 18,
+          },
+          headerTitleAlign: 'center',
         }}
       />
       <Tab.Screen 
@@ -98,13 +123,24 @@ export const TabNavigator: React.FC = () => {
         options={{
           title: 'Eventos Ambientais',
           tabBarLabel: 'Eventos',
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: COLORS.primary,
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          headerTintColor: COLORS.textLight,
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            fontSize: 18,
+          },
+          headerTitleAlign: 'center',
         }}
       />
       <Tab.Screen 
         name="Configurações" 
-        component={ConfiguracoesScreen}
+        component={ConfigNavigator}
         options={{
-          title: 'Configurações',
           tabBarLabel: 'Config',
         }}
       />

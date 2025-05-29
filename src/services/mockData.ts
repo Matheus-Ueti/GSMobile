@@ -1,6 +1,4 @@
 import { Sensor, LeituraSensor, Local, Evento, Alerta, Usuario } from '../types';
-
-// Dados mock para demonstração
 export const MOCK_LOCAIS: Local[] = [
   {
     id_local: 1,

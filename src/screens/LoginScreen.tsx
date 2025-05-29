@@ -1,32 +1,20 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Animated,
-  Dimensions,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView, Animated, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 export const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [senha, setSenha] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [emailFocus, setEmailFocus] = useState(false);
+  const [senhaFocus, setSenhaFocus] = useState(false);
   
-  const { login, loading } = useAuth();
+  const { login, carregando } = useAuth();
   
   const fadeAnim = new Animated.Value(0);
   const slideAnim = new Animated.Value(50);
@@ -46,32 +34,28 @@ export const LoginScreen: React.FC = () => {
     ]).start();
   }, []);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos');
+  const fazerLogin = async () => {
+    if (!email || !senha) {
+      Alert.alert('Ops!', 'Preenche os campos aí');
       return;
     }
 
     if (!email.includes('@')) {
-      Alert.alert('Erro', 'Por favor, insira um email válido');
+      Alert.alert('Email inválido', 'Coloca um @ no email');
       return;
     }
 
-    const success = await login(email, password);
+    const sucesso = await login(email, senha);
     
-    if (!success) {
-      Alert.alert(
-        'Erro no Login', 
-        'Credenciais inválidas. Tente novamente.',
-        [{ text: 'OK' }]
-      );
+    if (!sucesso) {
+      Alert.alert('Deu ruim', 'Email ou senha incorretos');
     }
   };
 
-  const handleDemoLogin = () => {
+  const loginDemo = () => {
     setEmail('admin@ecosafe.com');
-    setPassword('123456');
-    setTimeout(() => handleLogin(), 100);
+    setSenha('123456');
+    setTimeout(() => fazerLogin(), 100);
   };
 
   return (
@@ -82,58 +66,55 @@ export const LoginScreen: React.FC = () => {
     >
       <LinearGradient
         colors={[COLORS.primary, COLORS.secondary, COLORS.primary]}
-        style={styles.background}
+        style={styles.fundo}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
         <ScrollView 
-          contentContainerStyle={styles.scrollContainer}
+          contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View 
             style={[
-              styles.content,
+              styles.conteudo,
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }],
               }
             ]}
           >
-            {/* Logo e Header */}
-            <View style={styles.header}>
-              <View style={styles.logoContainer}>
+            <View style={styles.topo}>
+              <View style={styles.logo}>
                 <Ionicons name="leaf" size={60} color={COLORS.textLight} />
               </View>
-              <Text style={styles.title}>EcoSafe</Text>
-              <Text style={styles.subtitle}>
+              <Text style={styles.titulo}>EcoSafe</Text>
+              <Text style={styles.subtitulo}>
                 Sistema de Monitoramento Ambiental
               </Text>
             </View>
 
-            {/* Formulário de Login */}
-            <View style={styles.formContainer}>
-              <View style={styles.welcomeContainer}>
-                <Text style={styles.welcomeTitle}>Bem-vindo!</Text>
-                <Text style={styles.welcomeSubtitle}>
-                  Faça login para acessar o sistema
+            <View style={styles.formulario}>
+              <View style={styles.bemVindo}>
+                <Text style={styles.bemVindoTitulo}>Bem-vindo!</Text>
+                <Text style={styles.bemVindoTexto}>
+                  Faça login para continuar
                 </Text>
               </View>
 
-              {/* Campo Email */}
-              <View style={styles.inputContainer}>
+              <View style={styles.campo}>
                 <View style={[
-                  styles.inputWrapper,
-                  emailFocused && styles.inputFocused
+                  styles.input,
+                  emailFocus && styles.inputFocado
                 ]}>
                   <Ionicons 
                     name="mail" 
                     size={20} 
-                    color={emailFocused ? COLORS.primary : COLORS.textSecondary} 
-                    style={styles.inputIcon}
+                    color={emailFocus ? COLORS.primary : COLORS.textSecondary} 
+                    style={styles.icone}
                   />
                   <TextInput
-                    style={styles.input}
+                    style={styles.texto}
                     placeholder="Email"
                     placeholderTextColor={COLORS.textSecondary}
                     value={email}
@@ -143,46 +124,45 @@ export const LoginScreen: React.FC = () => {
                     autoComplete="email"
                     autoCorrect={false}
                     textContentType="emailAddress"
-                    onFocus={() => setEmailFocused(true)}
-                    onBlur={() => setEmailFocused(false)}
+                    onFocus={() => setEmailFocus(true)}
+                    onBlur={() => setEmailFocus(false)}
                     returnKeyType="next"
                     blurOnSubmit={false}
                   />
                 </View>
               </View>
 
-              {/* Campo Senha */}
-              <View style={styles.inputContainer}>
+              <View style={styles.campo}>
                 <View style={[
-                  styles.inputWrapper,
-                  passwordFocused && styles.inputFocused
+                  styles.input,
+                  senhaFocus && styles.inputFocado
                 ]}>
                   <Ionicons 
                     name="lock-closed" 
                     size={20} 
-                    color={passwordFocused ? COLORS.primary : COLORS.textSecondary} 
-                    style={styles.inputIcon}
+                    color={senhaFocus ? COLORS.primary : COLORS.textSecondary} 
+                    style={styles.icone}
                   />
                   <TextInput
-                    style={styles.input}
+                    style={styles.texto}
                     placeholder="Senha"
                     placeholderTextColor={COLORS.textSecondary}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
+                    value={senha}
+                    onChangeText={setSenha}
+                    secureTextEntry={!mostrarSenha}
                     autoComplete="password"
                     textContentType="password"
-                    onFocus={() => setPasswordFocused(true)}
-                    onBlur={() => setPasswordFocused(false)}
+                    onFocus={() => setSenhaFocus(true)}
+                    onBlur={() => setSenhaFocus(false)}
                     returnKeyType="done"
-                    onSubmitEditing={handleLogin}
+                    onSubmitEditing={fazerLogin}
                   />
                   <TouchableOpacity 
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.eyeIcon}
+                    onPress={() => setMostrarSenha(!mostrarSenha)}
+                    style={styles.olho}
                   >
                     <Ionicons 
-                      name={showPassword ? "eye" : "eye-off"} 
+                      name={mostrarSenha ? "eye" : "eye-off"} 
                       size={20} 
                       color={COLORS.textSecondary} 
                     />
@@ -190,59 +170,55 @@ export const LoginScreen: React.FC = () => {
                 </View>
               </View>
 
-              {/* Botão de Login */}
               <TouchableOpacity 
-                style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-                onPress={handleLogin}
-                disabled={loading}
+                style={[styles.botao, carregando && styles.botaoDesabilitado]}
+                onPress={fazerLogin}
+                disabled={carregando}
               >
                 <LinearGradient
                   colors={[COLORS.primary, COLORS.secondary]}
-                  style={styles.loginButtonGradient}
+                  style={styles.botaoGradiente}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  {loading ? (
-                    <View style={styles.loadingContainer}>
+                  {carregando ? (
+                    <View style={styles.carregando}>
                       <Animated.View style={styles.spinner}>
                         <Ionicons name="sync" size={20} color={COLORS.textLight} />
                       </Animated.View>
-                      <Text style={styles.loginButtonText}>Entrando...</Text>
+                      <Text style={styles.botaoTexto}>Entrando...</Text>
                     </View>
                   ) : (
                     <>
                       <Ionicons name="log-in" size={20} color={COLORS.textLight} />
-                      <Text style={styles.loginButtonText}>Entrar</Text>
+                      <Text style={styles.botaoTexto}>Entrar</Text>
                     </>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
 
-              {/* Botão Demo */}
               <TouchableOpacity 
-                style={styles.demoButton}
-                onPress={handleDemoLogin}
-                disabled={loading}
+                style={styles.botaoDemo}
+                onPress={loginDemo}
+                disabled={carregando}
               >
                 <Ionicons name="play-circle" size={16} color={COLORS.primary} />
-                <Text style={styles.demoButtonText}>Login Demo</Text>
+                <Text style={styles.botaoDemoTexto}>Login Demo</Text>
               </TouchableOpacity>
 
-              {/* Informações de Demo */}
-              <View style={styles.demoInfo}>
-                <Text style={styles.demoInfoText}>
-                  💡 Use qualquer email e senha para entrar
+              <View style={styles.info}>
+                <Text style={styles.infoTexto}>
+                  💡 Use qualquer email e senha
                 </Text>
-                <Text style={styles.demoInfoSubtext}>
-                  Este é um app de demonstração
+                <Text style={styles.infoSubTexto}>
+                  App de demonstração
                 </Text>
               </View>
             </View>
 
-            {/* Footer */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>
-                EcoSafe v1.0 • Mobile Application Development
+            <View style={styles.rodape}>
+              <Text style={styles.rodapeTexto}>
+                EcoSafe v1.0 • Mobile Development
               </Text>
             </View>
           </Animated.View>
@@ -256,25 +232,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  background: {
+  fundo: {
     flex: 1,
   },
-  scrollContainer: {
+  scroll: {
     flexGrow: 1,
     justifyContent: 'center',
     minHeight: height,
   },
-  content: {
+  conteudo: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 30,
     paddingVertical: 40,
   },
-  header: {
+  topo: {
     alignItems: 'center',
     marginBottom: 40,
   },
-  logoContainer: {
+  logo: {
     width: 100,
     height: 100,
     borderRadius: 50,
@@ -285,51 +261,47 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
-  title: {
+  titulo: {
     fontSize: 32,
     fontWeight: 'bold',
     color: COLORS.textLight,
     marginBottom: 8,
     textAlign: 'center',
   },
-  subtitle: {
+  subtitulo: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
-    lineHeight: 22,
   },
-  formContainer: {
+  formulario: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 20,
     padding: 30,
     shadowColor: COLORS.shadowColor,
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.25,
     shadowRadius: 15,
     elevation: 10,
   },
-  welcomeContainer: {
+  bemVindo: {
     alignItems: 'center',
     marginBottom: 30,
   },
-  welcomeTitle: {
+  bemVindoTitulo: {
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.text,
     marginBottom: 8,
   },
-  welcomeSubtitle: {
+  bemVindoTexto: {
     fontSize: 16,
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
-  inputContainer: {
+  campo: {
     marginBottom: 20,
   },
-  inputWrapper: {
+  input: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 2,
@@ -339,65 +311,59 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 12,
   },
-  inputFocused: {
+  inputFocado: {
     borderColor: COLORS.primary,
     shadowColor: COLORS.primary,
-    shadowOffset: {
-      width: 0,
-      height: 0,
-    },
+    shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
   },
-  inputIcon: {
+  icone: {
     marginRight: 12,
   },
-  input: {
+  texto: {
     flex: 1,
     fontSize: 16,
     color: COLORS.text,
   },
-  eyeIcon: {
+  olho: {
     padding: 5,
   },
-  loginButton: {
+  botao: {
     borderRadius: 12,
     overflow: 'hidden',
     marginTop: 10,
     shadowColor: COLORS.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
   },
-  loginButtonDisabled: {
+  botaoDesabilitado: {
     opacity: 0.7,
   },
-  loginButtonGradient: {
+  botaoGradiente: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
     paddingHorizontal: 24,
   },
-  loginButtonText: {
+  botaoTexto: {
     color: COLORS.textLight,
     fontSize: 18,
     fontWeight: 'bold',
     marginLeft: 8,
   },
-  loadingContainer: {
+  carregando: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   spinner: {
     marginRight: 8,
   },
-  demoButton: {
+  botaoDemo: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -409,35 +375,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.primary,
   },
-  demoButtonText: {
+  botaoDemoTexto: {
     color: COLORS.primary,
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 6,
   },
-  demoInfo: {
+  info: {
     alignItems: 'center',
     marginTop: 20,
     paddingTop: 20,
     borderTopWidth: 1,
     borderTopColor: COLORS.background,
   },
-  demoInfoText: {
+  infoTexto: {
     fontSize: 14,
     color: COLORS.text,
     textAlign: 'center',
     marginBottom: 4,
   },
-  demoInfoSubtext: {
+  infoSubTexto: {
     fontSize: 12,
     color: COLORS.textSecondary,
     textAlign: 'center',
   },
-  footer: {
+  rodape: {
     alignItems: 'center',
     marginTop: 30,
   },
-  footerText: {
+  rodapeTexto: {
     fontSize: 12,
     color: 'rgba(255, 255, 255, 0.7)',
     textAlign: 'center',

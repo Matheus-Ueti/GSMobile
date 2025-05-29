@@ -8,15 +8,15 @@ import { Loading } from '../components/common/Loading';
 const Stack = createNativeStackNavigator();
 
 export const AppNavigator: React.FC = () => {
-  const { isAuthenticated, loading } = useAuth();
+  const { estaLogado, carregando } = useAuth();
 
-  if (loading) {
-    return <Loading message="Verificando autenticação..." />;
+  if (carregando) {
+    return <Loading message="Verificando login..." />;
   }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {isAuthenticated ? (
+      {estaLogado ? (
         <Stack.Screen name="Main" component={TabNavigator} />
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />
