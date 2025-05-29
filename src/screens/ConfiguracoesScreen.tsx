@@ -11,8 +11,26 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/common/Card';
 import { COLORS } from '../constants/colors';
+import { useAuth } from '../contexts/AuthContext';
 
 export const ConfiguracoesScreen: React.FC = () => {
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Sair',
+      'Tem certeza que deseja sair do aplicativo?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Sair', 
+          style: 'destructive',
+          onPress: logout 
+        },
+      ]
+    );
+  };
+
   const handleAbout = () => {
     Alert.alert(
       'Sobre o EcoSafe',
@@ -76,6 +94,31 @@ export const ConfiguracoesScreen: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Configurações</Text>
+
+      {/* Informações do Usuário */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Usuário</Text>
+        
+        <Card title={user?.nome || 'Usuário'} subtitle={user?.email}>
+          <View style={styles.userInfo}>
+            <View style={styles.userAvatar}>
+              <Ionicons name="person" size={24} color={COLORS.primary} />
+            </View>
+            <View style={styles.userDetails}>
+              <Text style={styles.userStatus}>● Online</Text>
+            </View>
+          </View>
+        </Card>
+
+        <Card title="Sair" onPress={handleLogout} status="danger">
+          <View style={styles.optionContent}>
+            <Text style={styles.optionDescription}>
+              Fazer logout do aplicativo
+            </Text>
+            <Ionicons name="log-out" size={20} color={COLORS.danger} />
+          </View>
+        </Card>
+      </View>
 
       {/* Informações do App */}
       <View style={styles.section}>
@@ -226,6 +269,28 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginLeft: 16,
     marginBottom: 12,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(21, 101, 192, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  userStatus: {
+    fontSize: 14,
+    color: COLORS.success,
+    fontWeight: '500',
   },
   optionContent: {
     flexDirection: 'row',
