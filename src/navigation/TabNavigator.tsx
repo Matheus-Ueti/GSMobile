@@ -1,6 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { SensoresScreen } from '../screens/SensoresScreen';
 import { AlertasScreen } from '../screens/AlertasScreen';
@@ -9,8 +11,11 @@ import { ConfigNavigator } from './ConfigNavigator';
 import { COLORS } from '../constants/colors';
 
 const Tab = createBottomTabNavigator();
+const isWeb = Platform.OS === 'web';
 
 export const TabNavigator: React.FC = () => {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -46,13 +51,21 @@ export const TabNavigator: React.FC = () => {
           backgroundColor: COLORS.surface,
           borderTopColor: COLORS.background,
           borderTopWidth: 1,
-          paddingBottom: 8,
-          paddingTop: 8,
-          height: 60,
+          paddingBottom: isWeb ? 12 : Math.max(insets.bottom + 4, 16),
+          paddingTop: isWeb ? 12 : 12,
+          height: isWeb ? 70 : Math.max(60 + insets.bottom, 80),
+          ...(isWeb && {
+            position: 'fixed' as any,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1000,
+          }),
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: isWeb ? 14 : 12,
           fontWeight: '500',
+          marginBottom: isWeb ? 0 : 2,
         },
         headerShown: false,
       })}

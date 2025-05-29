@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { COLORS } from '../constants/colors';
 
-const { height } = Dimensions.get('window');
+const { height, width } = Dimensions.get('window');
+const isWeb = Platform.OS === 'web';
 
 export const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -53,16 +54,22 @@ export const LoginScreen: React.FC = () => {
   };
 
   const loginDemo = () => {
+    console.log('🔧 loginDemo clicado - carregando:', carregando);
     setEmail('admin@ecosafe.com');
     setSenha('123456');
-    setTimeout(() => fazerLogin(), 100);
+    console.log('✅ Campos preenchidos');
+  };
+
+  const Container = isWeb ? View : KeyboardAvoidingView;
+  const containerProps = isWeb ? {} : {
+    behavior: Platform.OS === 'ios' ? 'padding' : 'height',
+    keyboardVerticalOffset: Platform.OS === 'ios' ? 0 : 20,
   };
 
   return (
-    <KeyboardAvoidingView 
+    <Container 
       style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      {...containerProps}
     >
       <LinearGradient
         colors={[COLORS.primary, COLORS.secondary, COLORS.primary]}
@@ -71,13 +78,14 @@ export const LoginScreen: React.FC = () => {
         end={{ x: 1, y: 1 }}
       >
         <ScrollView 
-          contentContainerStyle={styles.scroll}
+          contentContainerStyle={[styles.scroll, isWeb && styles.scrollWeb]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View 
             style={[
               styles.conteudo,
+              isWeb && styles.conteudoWeb,
               {
                 opacity: fadeAnim,
                 transform: [{ translateY: slideAnim }],
@@ -94,7 +102,7 @@ export const LoginScreen: React.FC = () => {
               </Text>
             </View>
 
-            <View style={styles.formulario}>
+            <View style={[styles.formulario, isWeb && styles.formularioWeb]}>
               <View style={styles.bemVindo}>
                 <Text style={styles.bemVindoTitulo}>Bem-vindo!</Text>
                 <Text style={styles.bemVindoTexto}>
@@ -199,11 +207,14 @@ export const LoginScreen: React.FC = () => {
 
               <TouchableOpacity 
                 style={styles.botaoDemo}
-                onPress={loginDemo}
+                onPress={() => {
+                  console.log('🎯 Botão demo clicado - estado carregando:', carregando);
+                  loginDemo();
+                }}
                 disabled={carregando}
               >
-                <Ionicons name="play-circle" size={16} color={COLORS.primary} />
-                <Text style={styles.botaoDemoTexto}>Login Demo</Text>
+                <Ionicons name="flash" size={16} color={COLORS.primary} />
+                <Text style={styles.botaoDemoTexto}>Preencher Demo</Text>
               </TouchableOpacity>
 
               <View style={styles.info}>
@@ -211,7 +222,7 @@ export const LoginScreen: React.FC = () => {
                   💡 Use qualquer email e senha
                 </Text>
                 <Text style={styles.infoSubTexto}>
-                  App de demonstração
+                  Ou clique em "Preencher Demo" para testar
                 </Text>
               </View>
             </View>
@@ -224,7 +235,7 @@ export const LoginScreen: React.FC = () => {
           </Animated.View>
         </ScrollView>
       </LinearGradient>
-    </KeyboardAvoidingView>
+    </Container>
   );
 };
 
@@ -240,11 +251,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: height,
   },
+  scrollWeb: {
+    minHeight: '100vh',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   conteudo: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 30,
     paddingVertical: 40,
+  },
+  conteudoWeb: {
+    flex: 'none' as any,
+    width: Math.min(width * 0.9, 400),
+    maxWidth: 400,
   },
   topo: {
     alignItems: 'center',
@@ -282,6 +303,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 15,
     elevation: 10,
+  },
+  formularioWeb: {
+    shadowColor: COLORS.shadowColor,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   bemVindo: {
     alignItems: 'center',
@@ -326,6 +355,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: COLORS.text,
+    outlineStyle: 'none' as any,
   },
   olho: {
     padding: 5,
