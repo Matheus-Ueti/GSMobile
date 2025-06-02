@@ -72,7 +72,7 @@ export const LoginScreen: React.FC = () => {
       {...containerProps}
     >
       <LinearGradient
-        colors={[COLORS.primary, COLORS.secondary, COLORS.primary]}
+        colors={['#1976D2', COLORS.primary, '#0D47A1']}
         style={styles.fundo}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -184,7 +184,7 @@ export const LoginScreen: React.FC = () => {
                 disabled={carregando}
               >
                 <LinearGradient
-                  colors={[COLORS.primary, COLORS.secondary]}
+                  colors={[COLORS.primary, '#1976D2']}
                   style={styles.botaoGradiente}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}

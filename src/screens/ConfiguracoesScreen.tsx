@@ -29,18 +29,6 @@ export const ConfiguracoesScreen: React.FC = () => {
     },
     { 
       id: 2, 
-      titulo: 'Notificações', 
-      icone: 'notifications', 
-      acao: () => navigation.navigate('Notificacoes' as never)
-    },
-    { 
-      id: 3, 
-      titulo: 'Preferências', 
-      icone: 'settings', 
-      acao: () => navigation.navigate('Preferencias' as never)
-    },
-    { 
-      id: 4, 
       titulo: 'Sobre', 
       icone: 'information-circle', 
       acao: () => navigation.navigate('Sobre' as never)

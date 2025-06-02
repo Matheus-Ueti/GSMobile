@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
 
@@ -10,9 +10,9 @@ export const SobreScreen: React.FC = () => {
   const versaoExpo = '50.0.0';
 
   const desenvolvedores = [
-    { nome: 'João Silva', papel: 'Desenvolvedor Frontend', email: 'joao@ecosafe.com' },
-    { nome: 'Maria Santos', papel: 'Desenvolvedora Backend', email: 'maria@ecosafe.com' },
-    { nome: 'Carlos Oliveira', papel: 'Designer UX/UI', email: 'carlos@ecosafe.com' },
+    { nome: 'Matheus Munuera', papel: 'Desenvolvedor Frontend', email: 'matheus@ecosafe.com' },
+    { nome: 'Luiz Felipe', papel: 'Desenvolvedor Backend', email: 'luiz@ecosafe.com' },
+    { nome: 'Pedro Henrique', papel: 'Designer UX/UI', email: 'pedro@ecosafe.com' },
   ];
 
   const tecnologias = [
@@ -38,26 +38,6 @@ export const SobreScreen: React.FC = () => {
     { titulo: 'Alertas Processados', valor: '10,000+', icone: 'notifications' },
     { titulo: 'Dados Coletados', valor: '50GB+', icone: 'server' },
   ];
-
-  const abrirLink = (url: string) => {
-    Linking.openURL(url).catch(() => 
-      Alert.alert('Erro', 'Não foi possível abrir o link')
-    );
-  };
-
-  const enviarEmail = (email: string) => {
-    Linking.openURL(`mailto:${email}`).catch(() =>
-      Alert.alert('Erro', 'Não foi possível abrir o cliente de email')
-    );
-  };
-
-  const compartilharApp = () => {
-    Alert.alert('Compartilhar', 'Link do EcoSafe copiado para a área de transferência!');
-  };
-
-  const avaliarApp = () => {
-    Alert.alert('Avaliação', 'Obrigado pelo feedback! Você será redirecionado para a loja.');
-  };
 
   return (
     <ScrollView style={styles.container}>
@@ -123,10 +103,9 @@ export const SobreScreen: React.FC = () => {
       <View style={styles.secao}>
         <Text style={styles.tituloSecao}>Equipe de Desenvolvimento</Text>
         {desenvolvedores.map((dev, index) => (
-          <TouchableOpacity 
+          <View 
             key={index} 
             style={styles.devItem}
-            onPress={() => enviarEmail(dev.email)}
           >
             <View style={styles.devAvatar}>
               <Ionicons name="person" size={24} color={COLORS.primary} />
@@ -136,52 +115,9 @@ export const SobreScreen: React.FC = () => {
               <Text style={styles.devPapel}>{dev.papel}</Text>
               <Text style={styles.devEmail}>{dev.email}</Text>
             </View>
-            <Ionicons name="mail" size={20} color={COLORS.textSecondary} />
-          </TouchableOpacity>
+            <Ionicons name="person-circle" size={20} color={COLORS.textSecondary} />
+          </View>
         ))}
-      </View>
-
-      <View style={styles.secao}>
-        <Text style={styles.tituloSecao}>Links e Recursos</Text>
-        
-        <TouchableOpacity 
-          style={styles.linkBtn} 
-          onPress={() => abrirLink('https://github.com/ecosafe/mobile')}
-        >
-          <Ionicons name="logo-github" size={20} color={COLORS.primary} />
-          <Text style={styles.linkTexto}>Código Fonte no GitHub</Text>
-          <Ionicons name="open" size={16} color={COLORS.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.linkBtn} 
-          onPress={() => abrirLink('https://ecosafe.com/docs')}
-        >
-          <Ionicons name="document-text" size={20} color={COLORS.primary} />
-          <Text style={styles.linkTexto}>Documentação</Text>
-          <Ionicons name="open" size={16} color={COLORS.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.linkBtn} 
-          onPress={() => abrirLink('https://ecosafe.com/api')}
-        >
-          <Ionicons name="server" size={20} color={COLORS.primary} />
-          <Text style={styles.linkTexto}>API Documentation</Text>
-          <Ionicons name="open" size={16} color={COLORS.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.linkBtn} onPress={compartilharApp}>
-          <Ionicons name="share" size={20} color={COLORS.primary} />
-          <Text style={styles.linkTexto}>Compartilhar App</Text>
-          <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.linkBtn} onPress={avaliarApp}>
-          <Ionicons name="star" size={20} color={COLORS.warning} />
-          <Text style={styles.linkTexto}>Avaliar na Loja</Text>
-          <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.footer}>
@@ -356,20 +292,6 @@ const styles = StyleSheet.create({
   devEmail: {
     fontSize: 12,
     color: COLORS.primary,
-  },
-  linkBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.surface,
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  linkTexto: {
-    flex: 1,
-    fontSize: 16,
-    color: COLORS.text,
-    marginLeft: 12,
   },
   footer: {
     backgroundColor: COLORS.surface,

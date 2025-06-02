@@ -2,8 +2,6 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ConfiguracoesScreen } from '../screens/ConfiguracoesScreen';
 import { PerfilScreen } from '../screens/PerfilScreen';
-import { NotificacoesScreen } from '../screens/NotificacoesScreen';
-import { PreferenciasScreen } from '../screens/PreferenciasScreen';
 import { SobreScreen } from '../screens/SobreScreen';
 import { COLORS } from '../constants/colors';
 
@@ -36,20 +34,6 @@ export const ConfigNavigator: React.FC = () => {
         component={PerfilScreen}
         options={{
           title: 'Meu Perfil',
-        }}
-      />
-      <Stack.Screen 
-        name="Notificacoes" 
-        component={NotificacoesScreen}
-        options={{
-          title: 'Notificações',
-        }}
-      />
-      <Stack.Screen 
-        name="Preferencias" 
-        component={PreferenciasScreen}
-        options={{
-          title: 'Preferências',
         }}
       />
       <Stack.Screen 
