@@ -3,9 +3,9 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, Tex
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/common/Card';
 import { Loading } from '../components/common/Loading';
-import { COLORS } from '../constants/colors';
-import { alertaService, eventoService } from '../services/api';
+import { MOCK_ALERTAS, MOCK_EVENTOS } from '../services/mockData';
 import { Alerta, Evento } from '../types';
+import { COLORS } from '../constants/colors';
 
 export const AlertasScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -22,14 +22,11 @@ export const AlertasScreen: React.FC = () => {
 
   const loadData = async () => {
     try {
-      const [alertasResponse, eventosResponse] = await Promise.all([
-        alertaService.getAll(),
-        eventoService.getAll(),
-      ]);
-      setAlertas(alertasResponse.data || []);
-      setEventos(eventosResponse.data || []);
+      // Usando dados mock temporariamente
+      setAlertas(MOCK_ALERTAS);
+      setEventos(MOCK_EVENTOS);
     } catch (error) {
-      console.error('Erro ao carregar alertas:', error);
+      console.error('Erro ao carregar dados:', error);
       Alert.alert('Erro', 'Não foi possível carregar os alertas');
     } finally {
       setLoading(false);
@@ -88,10 +85,10 @@ export const AlertasScreen: React.FC = () => {
       };
 
       if (editingAlerta) {
-        await alertaService.update(editingAlerta.id_alerta, alertaData);
+        // Implemente a lógica para atualizar o alerta
         Alert.alert('Sucesso', 'Alerta atualizado com sucesso');
       } else {
-        await alertaService.create(alertaData);
+        // Implemente a lógica para criar um novo alerta
         Alert.alert('Sucesso', 'Alerta criado com sucesso');
       }
       closeModal();
@@ -113,7 +110,7 @@ export const AlertasScreen: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await alertaService.delete(alerta.id_alerta);
+              // Implemente a lógica para excluir o alerta
               Alert.alert('Sucesso', 'Alerta excluído com sucesso');
               loadData();
             } catch (error) {

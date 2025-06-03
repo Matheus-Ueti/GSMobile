@@ -8,18 +8,23 @@ import { COLORS } from '../constants/colors';
 const { height, width } = Dimensions.get('window');
 const isWeb = Platform.OS === 'web';
 
-interface LoginScreenProps {
+interface CadastroScreenProps {
   navigation: any;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
+export const CadastroScreen: React.FC<CadastroScreenProps> = ({ navigation }) => {
+  const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
+  const [nomeFocus, setNomeFocus] = useState(false);
   const [emailFocus, setEmailFocus] = useState(false);
   const [senhaFocus, setSenhaFocus] = useState(false);
+  const [confirmarSenhaFocus, setConfirmarSenhaFocus] = useState(false);
   
-  const { login, carregando } = useAuth();
+  const { cadastrar, carregando } = useAuth();
   
   const fadeAnim = new Animated.Value(0);
   const slideAnim = new Animated.Value(50);
@@ -39,39 +44,51 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     ]).start();
   }, []);
 
-  const fazerLogin = async () => {
-    console.log('🚀 Iniciando login - Web:', isWeb);
-    
-    if (!email || !senha) {
-      Alert.alert('Ops!', 'Preenche os campos aí');
-      return;
+  const validarFormulario = () => {
+    if (!nome || !email || !senha || !confirmarSenha) {
+      Alert.alert('Ops!', 'Preencha todos os campos');
+      return false;
     }
 
     if (!email.includes('@')) {
-      Alert.alert('Email inválido', 'Coloca um @ no email');
+      Alert.alert('Email inválido', 'Digite um email válido');
+      return false;
+    }
+
+    if (senha.length < 6) {
+      Alert.alert('Senha muito curta', 'A senha deve ter pelo menos 6 caracteres');
+      return false;
+    }
+
+    if (senha !== confirmarSenha) {
+      Alert.alert('Senhas diferentes', 'As senhas não coincidem');
+      return false;
+    }
+
+    return true;
+  };
+
+  const fazerCadastro = async () => {
+    console.log('🚀 Iniciando cadastro - Web:', isWeb);
+    
+    if (!validarFormulario()) {
       return;
     }
 
-    console.log('📧 Tentando login com:', email);
-    const sucesso = await login(email, senha);
-    console.log('✅ Resultado do login:', sucesso);
+    console.log('📧 Tentando cadastro com:', email);
+    const sucesso = await cadastrar(nome, email, senha);
+    console.log('✅ Resultado do cadastro:', sucesso);
     
     if (!sucesso) {
-      Alert.alert('Deu ruim', 'Email ou senha incorretos');
+      Alert.alert('Erro no cadastro', 'Não foi possível criar sua conta. Tente novamente.');
     } else {
-      console.log('🎉 Login bem-sucedido!');
+      console.log('🎉 Cadastro bem-sucedido!');
+      Alert.alert('Sucesso!', 'Conta criada com sucesso! Você já está logado.');
     }
   };
 
-  const loginDemo = () => {
-    console.log('🔧 loginDemo clicado - carregando:', carregando);
-    setEmail('admin@ecosafe.com');
-    setSenha('123456');
-    console.log('✅ Campos preenchidos');
-  };
-
-  const irParaCadastro = () => {
-    navigation.navigate('Cadastro');
+  const voltarParaLogin = () => {
+    navigation.navigate('Login');
   };
 
   const Container = isWeb ? View : KeyboardAvoidingView;
@@ -96,7 +113,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View 
+          <Animated.View
             style={[
               styles.conteudo,
               isWeb && styles.conteudoWeb,
@@ -107,12 +124,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             ]}
           >
             <View style={styles.topo}>
+              <TouchableOpacity style={styles.voltarButton} onPress={voltarParaLogin}>
+                <Ionicons name="arrow-back" size={24} color={COLORS.textLight} />
+              </TouchableOpacity>
+              
               <View style={styles.logo}>
-                <Ionicons name="leaf" size={60} color={COLORS.textLight} />
+                <Ionicons name="person-add" size={60} color={COLORS.textLight} />
               </View>
-              <Text style={styles.titulo}>EcoSafe</Text>
+              <Text style={styles.titulo}>Criar Conta</Text>
               <Text style={styles.subtitulo}>
-                Sistema de Monitoramento Ambiental
+                Junte-se ao EcoSafe
               </Text>
             </View>
 
@@ -120,10 +141,40 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <View style={styles.bemVindo}>
                 <Text style={styles.bemVindoTitulo}>Bem-vindo!</Text>
                 <Text style={styles.bemVindoTexto}>
-                  Faça login para continuar
+                  Preencha os dados para criar sua conta
                 </Text>
               </View>
 
+              {/* Campo Nome */}
+              <View style={styles.campo}>
+                <View style={[
+                  styles.input,
+                  nomeFocus && styles.inputFocado
+                ]}>
+                  <Ionicons 
+                    name="person" 
+                    size={20} 
+                    color={nomeFocus ? COLORS.primary : COLORS.textSecondary} 
+                    style={styles.icone}
+                  />
+                  <TextInput
+                    style={styles.texto}
+                    placeholder="Nome completo"
+                    placeholderTextColor={COLORS.textSecondary}
+                    value={nome}
+                    onChangeText={setNome}
+                    autoCapitalize="words"
+                    autoComplete="name"
+                    textContentType="name"
+                    onFocus={() => setNomeFocus(true)}
+                    onBlur={() => setNomeFocus(false)}
+                    returnKeyType="next"
+                    blurOnSubmit={false}
+                  />
+                </View>
+              </View>
+
+              {/* Campo Email */}
               <View style={styles.campo}>
                 <View style={[
                   styles.input,
@@ -141,7 +192,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                     placeholderTextColor={COLORS.textSecondary}
                     value={email}
                     onChangeText={setEmail}
-                    keyboardType="default"
+                    keyboardType="email-address"
                     autoCapitalize="none"
                     autoComplete="email"
                     autoCorrect={false}
@@ -154,6 +205,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 </View>
               </View>
 
+              {/* Campo Senha */}
               <View style={styles.campo}>
                 <View style={[
                   styles.input,
@@ -167,17 +219,17 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                   />
                   <TextInput
                     style={styles.texto}
-                    placeholder="Senha"
+                    placeholder="Senha (mín. 6 caracteres)"
                     placeholderTextColor={COLORS.textSecondary}
                     value={senha}
                     onChangeText={setSenha}
                     secureTextEntry={!mostrarSenha}
-                    autoComplete="password"
-                    textContentType="password"
+                    autoComplete="password-new"
+                    textContentType="newPassword"
                     onFocus={() => setSenhaFocus(true)}
                     onBlur={() => setSenhaFocus(false)}
-                    returnKeyType="done"
-                    onSubmitEditing={fazerLogin}
+                    returnKeyType="next"
+                    blurOnSubmit={false}
                   />
                   <TouchableOpacity 
                     onPress={() => setMostrarSenha(!mostrarSenha)}
@@ -192,13 +244,53 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 </View>
               </View>
 
-              <TouchableOpacity 
+              {/* Campo Confirmar Senha */}
+              <View style={styles.campo}>
+                <View style={[
+                  styles.input,
+                  confirmarSenhaFocus && styles.inputFocado
+                ]}>
+                  <Ionicons 
+                    name="checkmark-circle" 
+                    size={20} 
+                    color={confirmarSenhaFocus ? COLORS.primary : COLORS.textSecondary} 
+                    style={styles.icone}
+                  />
+                  <TextInput
+                    style={styles.texto}
+                    placeholder="Confirmar senha"
+                    placeholderTextColor={COLORS.textSecondary}
+                    value={confirmarSenha}
+                    onChangeText={setConfirmarSenha}
+                    secureTextEntry={!mostrarConfirmarSenha}
+                    autoComplete="password-new"
+                    textContentType="newPassword"
+                    onFocus={() => setConfirmarSenhaFocus(true)}
+                    onBlur={() => setConfirmarSenhaFocus(false)}
+                    returnKeyType="done"
+                    onSubmitEditing={fazerCadastro}
+                  />
+                  <TouchableOpacity 
+                    onPress={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+                    style={styles.olho}
+                  >
+                    <Ionicons 
+                      name={mostrarConfirmarSenha ? "eye" : "eye-off"} 
+                      size={20} 
+                      color={COLORS.textSecondary} 
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Botão Cadastrar */}
+              <TouchableOpacity
                 style={[styles.botao, carregando && styles.botaoDesabilitado]}
-                onPress={fazerLogin}
+                onPress={fazerCadastro}
                 disabled={carregando}
               >
                 <LinearGradient
-                  colors={[COLORS.primary, '#1976D2']}
+                  colors={[COLORS.success, '#4CAF50']}
                   style={styles.botaoGradiente}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
@@ -208,46 +300,34 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                       <Animated.View style={styles.spinner}>
                         <Ionicons name="sync" size={20} color={COLORS.textLight} />
                       </Animated.View>
-                      <Text style={styles.botaoTexto}>Entrando...</Text>
+                      <Text style={styles.botaoTexto}>Criando conta...</Text>
                     </View>
                   ) : (
                     <>
-                      <Ionicons name="log-in" size={20} color={COLORS.textLight} />
-                      <Text style={styles.botaoTexto}>Entrar</Text>
+                      <Ionicons name="person-add" size={20} color={COLORS.textLight} />
+                      <Text style={styles.botaoTexto}>Criar Conta</Text>
                     </>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
 
+              {/* Link para Login */}
               <TouchableOpacity 
-                style={styles.botaoDemo}
-                onPress={() => {
-                  console.log('🎯 Botão demo clicado - estado carregando:', carregando);
-                  loginDemo();
-                }}
+                style={styles.linkLogin}
+                onPress={voltarParaLogin}
                 disabled={carregando}
               >
-                <Ionicons name="flash" size={16} color={COLORS.primary} />
-                <Text style={styles.botaoDemoTexto}>Preencher Demo</Text>
-              </TouchableOpacity>
-
-              {/* Link para Cadastro */}
-              <TouchableOpacity 
-                style={styles.linkCadastro}
-                onPress={irParaCadastro}
-                disabled={carregando}
-              >
-                <Text style={styles.linkCadastroTexto}>
-                  Não tem uma conta? <Text style={styles.linkCadastroDestaque}>Criar conta</Text>
+                <Text style={styles.linkLoginTexto}>
+                  Já tem uma conta? <Text style={styles.linkLoginDestaque}>Fazer login</Text>
                 </Text>
               </TouchableOpacity>
 
               <View style={styles.info}>
                 <Text style={styles.infoTexto}>
-                  💡 Use qualquer email e senha
+                  🛡️ Seus dados estão seguros conosco
                 </Text>
                 <Text style={styles.infoSubTexto}>
-                  Ou clique em "Preencher Demo" para testar
+                  Ao criar uma conta, você concorda com nossos termos
                 </Text>
               </View>
             </View>
@@ -289,13 +369,22 @@ const styles = StyleSheet.create({
   },
   conteudoWeb: {
     flex: 'none' as any,
-    width: Math.min(width * 0.9, 400),
-    maxWidth: 400,
+    width: Math.min(width * 0.9, 420),
+    maxWidth: 420,
     minHeight: 'auto' as any,
   },
   topo: {
     alignItems: 'center',
     marginBottom: 40,
+    position: 'relative',
+  },
+  voltarButton: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   logo: {
     width: 100,
@@ -340,7 +429,7 @@ const styles = StyleSheet.create({
   },
   bemVindo: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 25,
   },
   bemVindoTitulo: {
     fontSize: 24,
@@ -354,7 +443,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   campo: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   input: {
     flexDirection: 'row',
@@ -389,8 +478,8 @@ const styles = StyleSheet.create({
   botao: {
     borderRadius: 12,
     overflow: 'hidden',
-    marginTop: 10,
-    shadowColor: COLORS.primary,
+    marginTop: 20,
+    shadowColor: COLORS.success,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -419,42 +508,18 @@ const styles = StyleSheet.create({
   spinner: {
     marginRight: 8,
   },
-  botaoDemo: {
-    flexDirection: 'row',
+  linkLogin: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
+    marginTop: 20,
     paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    backgroundColor: 'rgba(21, 101, 192, 0.1)',
-    borderWidth: 1,
-    borderColor: COLORS.primary,
   },
-  botaoDemoTexto: {
-    color: COLORS.primary,
+  linkLoginTexto: {
     fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 6,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
   },
-  linkCadastro: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  linkCadastroTexto: {
+  linkLoginDestaque: {
     color: COLORS.primary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  linkCadastroDestaque: {
     fontWeight: 'bold',
   },
   info: {
@@ -481,7 +546,7 @@ const styles = StyleSheet.create({
   },
   rodapeTexto: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255, 255, 255, 0.6)',
     textAlign: 'center',
   },
 }); 

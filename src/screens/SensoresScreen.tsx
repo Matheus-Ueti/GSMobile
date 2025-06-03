@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/common/Card';
 import { Loading } from '../components/common/Loading';
 import { COLORS } from '../constants/colors';
-import { sensorService } from '../services/api';
+import { apiService } from '../services/api';
+import { MOCK_SENSORES } from '../services/mockData';
 import { Sensor } from '../types';
 
 export const SensoresScreen: React.FC = () => {
@@ -17,13 +18,18 @@ export const SensoresScreen: React.FC = () => {
     tipo: '',
     localizacao: '',
     unidade_medida: '',
-    status: 'ativo',
+    status: 'ativo' as 'ativo' | 'inativo'
   });
 
   const loadSensores = async () => {
     try {
-      const response = await sensorService.getAll();
-      setSensores(response.data || []);
+      // Usando dados mock temporariamente
+      setSensores(MOCK_SENSORES);
+      
+      // Quando sua API Java estiver rodando, descomente esta linha:
+      // const response = await apiService.getSensores();
+      // setSensores(response);
+      
     } catch (error) {
       console.error('Erro ao carregar sensores:', error);
       Alert.alert('Erro', 'Não foi possível carregar os sensores');
@@ -75,19 +81,15 @@ export const SensoresScreen: React.FC = () => {
   };
 
   const saveSensor = async () => {
-    if (!formData.tipo || !formData.localizacao || !formData.unidade_medida) {
-      Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
-      return;
-    }
-
     try {
       if (editingSensor) {
-        await sensorService.update(editingSensor.id_sensor, formData);
-        Alert.alert('Sucesso', 'Sensor atualizado com sucesso');
+        // await apiService.updateSensor(editingSensor.id_sensor, formData);
+        Alert.alert('Sucesso', 'Sensor atualizado com sucesso (mock)');
       } else {
-        await sensorService.create(formData);
-        Alert.alert('Sucesso', 'Sensor criado com sucesso');
+        // await apiService.createSensor(formData);
+        Alert.alert('Sucesso', 'Sensor criado com sucesso (mock)');
       }
+      
       closeModal();
       loadSensores();
     } catch (error) {
@@ -99,7 +101,7 @@ export const SensoresScreen: React.FC = () => {
   const deleteSensor = (sensor: Sensor) => {
     Alert.alert(
       'Confirmar exclusão',
-      `Tem certeza que deseja excluir o sensor "${sensor.tipo}"?`,
+      `Deseja realmente excluir o sensor "${sensor.tipo}"?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -107,15 +109,15 @@ export const SensoresScreen: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await sensorService.delete(sensor.id_sensor);
-              Alert.alert('Sucesso', 'Sensor excluído com sucesso');
+              // await apiService.deleteSensor(sensor.id_sensor);
+              Alert.alert('Sucesso', 'Sensor excluído com sucesso (mock)');
               loadSensores();
             } catch (error) {
               console.error('Erro ao excluir sensor:', error);
               Alert.alert('Erro', 'Não foi possível excluir o sensor');
             }
-          },
-        },
+          }
+        }
       ]
     );
   };

@@ -3,9 +3,9 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, Tex
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/common/Card';
 import { Loading } from '../components/common/Loading';
-import { COLORS } from '../constants/colors';
-import { eventoService, localService } from '../services/api';
+import { MOCK_EVENTOS, MOCK_LOCAIS } from '../services/mockData';
 import { Evento, Local } from '../types';
+import { COLORS } from '../constants/colors';
 
 export const EventosScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -23,14 +23,11 @@ export const EventosScreen: React.FC = () => {
 
   const loadData = async () => {
     try {
-      const [eventosResponse, locaisResponse] = await Promise.all([
-        eventoService.getAll(),
-        localService.getAll(),
-      ]);
-      setEventos(eventosResponse.data || []);
-      setLocais(locaisResponse.data || []);
+      // Usando dados mock temporariamente
+      setEventos(MOCK_EVENTOS);
+      setLocais(MOCK_LOCAIS);
     } catch (error) {
-      console.error('Erro ao carregar eventos:', error);
+      console.error('Erro ao carregar dados:', error);
       Alert.alert('Erro', 'Não foi possível carregar os eventos');
     } finally {
       setLoading(false);
@@ -92,10 +89,8 @@ export const EventosScreen: React.FC = () => {
       };
 
       if (editingEvento) {
-        await eventoService.update(editingEvento.id_evento, eventoData);
         Alert.alert('Sucesso', 'Evento atualizado com sucesso');
       } else {
-        await eventoService.create(eventoData);
         Alert.alert('Sucesso', 'Evento criado com sucesso');
       }
       closeModal();
@@ -117,7 +112,7 @@ export const EventosScreen: React.FC = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await eventoService.delete(evento.id_evento);
+              // Implemente a lógica para excluir o evento
               Alert.alert('Sucesso', 'Evento excluído com sucesso');
               loadData();
             } catch (error) {

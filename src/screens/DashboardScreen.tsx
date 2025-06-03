@@ -3,7 +3,8 @@ import { View, Text, ScrollView, StyleSheet, RefreshControl, Alert } from 'react
 import { Card } from '../components/common/Card';
 import { Loading } from '../components/common/Loading';
 import { COLORS } from '../constants/colors';
-import { leituraService, alertaService, eventoService } from '../services/api';
+import { apiService } from '../services/api';
+import { MOCK_LEITURAS, MOCK_ALERTAS, MOCK_EVENTOS } from '../services/mockData';
 import { LeituraSensor, Alerta, Evento } from '../types';
 
 export const DashboardScreen: React.FC = () => {
@@ -15,15 +16,19 @@ export const DashboardScreen: React.FC = () => {
 
   const loadData = async () => {
     try {
-      const [leiturasResponse, alertasResponse, eventosResponse] = await Promise.all([
-        leituraService.getRecent(),
-        alertaService.getActive(),
-        eventoService.getRecent(),
-      ]);
-
-      setLeituras(leiturasResponse.data || []);
-      setAlertasAtivos(alertasResponse.data || []);
-      setEventosRecentes(eventosResponse.data || []);
+      // Usando dados mock temporariamente até sua API Java estar rodando
+      setLeituras(MOCK_LEITURAS.slice(0, 5));
+      setAlertasAtivos(MOCK_ALERTAS);
+      setEventosRecentes(MOCK_EVENTOS.slice(0, 3));
+      
+      // Quando sua API Java estiver rodando, descomente estas linhas:
+      // const leituras = await apiService.getLeituras();
+      // const alertas = await apiService.getAlertas();
+      // const eventos = await apiService.getEventos();
+      // setLeituras(leituras.slice(0, 5));
+      // setAlertasAtivos(alertas);
+      // setEventosRecentes(eventos.slice(0, 3));
+      
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       Alert.alert('Erro', 'Não foi possível carregar os dados do dashboard');
