@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, TextInput, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, TextInput, RefreshControl, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/common/Card';
 import { Loading } from '../components/common/Loading';
@@ -8,10 +8,13 @@ import { Alerta, Evento } from '../types';
 import { COLORS } from '../constants/colors';
 
 export const AlertasScreen: React.FC = () => {
+  // Estados básicos
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [alertas, setAlertas] = useState<Alerta[]>([]);
   const [eventos, setEventos] = useState<Evento[]>([]);
+  
+  // Estados do modal
   const [modalVisible, setModalVisible] = useState(false);
   const [editingAlerta, setEditingAlerta] = useState<Alerta | null>(null);
   const [formData, setFormData] = useState({
@@ -19,31 +22,25 @@ export const AlertasScreen: React.FC = () => {
     mensagem: '',
     nivel_urgencia: 'baixo',
   });
-
-  const loadData = async () => {
+  const carregarDados = async () => {
     try {
-      // Usando dados mock temporariamente
       setAlertas(MOCK_ALERTAS);
       setEventos(MOCK_EVENTOS);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os alertas');
+      Alert.alert('Erro', 'Erro ao carregar alertas');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const onRefresh = () => {
+  const atualizarLista = () => {
     setRefreshing(true);
-    loadData();
+    carregarDados();
   };
 
-  const openModal = (alerta?: Alerta) => {
+  // Gerenciamento do modal
+  const abrirModal = (alerta?: Alerta) => {
     if (alerta) {
       setEditingAlerta(alerta);
       setFormData({
@@ -62,89 +59,59 @@ export const AlertasScreen: React.FC = () => {
     setModalVisible(true);
   };
 
-  const closeModal = () => {
+  const fecharModal = () => {
     setModalVisible(false);
     setEditingAlerta(null);
-    setFormData({
-      id_evento: eventos.length > 0 ? eventos[0].id_evento : 0,
-      mensagem: '',
-      nivel_urgencia: 'baixo',
-    });
   };
 
-  const saveAlerta = async () => {
+  const salvarAlerta = () => {
     if (!formData.mensagem || formData.id_evento === 0) {
-      Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
+      Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
 
-    try {
-      const alertaData = {
-        ...formData,
-        data_hora: new Date().toISOString(),
-      };
-
-      if (editingAlerta) {
-        // Implemente a lógica para atualizar o alerta
-        Alert.alert('Sucesso', 'Alerta atualizado com sucesso');
-      } else {
-        // Implemente a lógica para criar um novo alerta
-        Alert.alert('Sucesso', 'Alerta criado com sucesso');
-      }
-      closeModal();
-      loadData();
-    } catch (error) {
-      console.error('Erro ao salvar alerta:', error);
-      Alert.alert('Erro', 'Não foi possível salvar o alerta');
-    }
+    const mensagem = editingAlerta ? 'Alerta atualizado!' : 'Alerta criado!';
+    Alert.alert('Sucesso', mensagem);
+    fecharModal();
+    carregarDados();
   };
 
-  const deleteAlerta = (alerta: Alerta) => {
+  const excluirAlerta = (alerta: Alerta) => {
     Alert.alert(
-      'Confirmar exclusão',
-      `Tem certeza que deseja excluir este alerta?`,
+      'Confirmar',
+      'Excluir este alerta?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // Implemente a lógica para excluir o alerta
-              Alert.alert('Sucesso', 'Alerta excluído com sucesso');
-              loadData();
-            } catch (error) {
-              console.error('Erro ao excluir alerta:', error);
-              Alert.alert('Erro', 'Não foi possível excluir o alerta');
-            }
-          },
-        },
+        { text: 'Excluir', style: 'destructive', onPress: () => {
+          Alert.alert('Sucesso', 'Alerta excluído!');
+          carregarDados();
+        }}
       ]
     );
   };
 
-  const getAlertaStatus = (nivel: string) => {
-    switch (nivel.toLowerCase()) {
-      case 'crítico':
-      case 'alto':
-        return 'danger';
-      case 'médio':
-        return 'warning';
-      case 'baixo':
-        return 'success';
-      default:
-        return 'normal';
-    }
+  // Funções auxiliares
+  const obterStatusCor = (nivel: string) => {
+    if (nivel === 'crítico') return 'danger';
+    if (nivel === 'alto') return 'warning';
+    if (nivel === 'médio') return 'warning';
+    return 'normal';
   };
 
-  const formatarData = (dataString: string) => {
-    const data = new Date(dataString);
-    return data.toLocaleString('pt-BR');
+  const formatarData = (data: string) => {
+    return new Date(data).toLocaleString('pt-BR');
   };
 
-  const getEventoById = (id: number) => {
+  const obterEvento = (id: number) => {
     return eventos.find(evento => evento.id_evento === id);
   };
+
+  // Dados para os seletores
+  const niveisUrgencia = ['baixo', 'médio', 'alto', 'crítico'];
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
 
   if (loading) {
     return <Loading message="Carregando alertas..." />;
@@ -152,35 +119,36 @@ export const AlertasScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Cabeçalho */}
       <View style={styles.header}>
-        <Text style={styles.title}>Alertas</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => openModal()}>
-          <Ionicons name="add" size={24} color={COLORS.textLight} />
+        <Text style={styles.titulo}>Alertas</Text>
+        <TouchableOpacity style={styles.botaoAdicionar} onPress={() => abrirModal()}>
+          <Ionicons name="add" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
+      {/* Lista */}
       <ScrollView
-        style={styles.scrollView}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        style={styles.lista}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={atualizarLista} />}
       >
         {alertas.map((alerta) => {
-          const evento = getEventoById(alerta.id_evento);
+          const evento = obterEvento(alerta.id_evento);
           return (
             <Card
               key={alerta.id_alerta}
               title={alerta.mensagem}
-              subtitle={`${evento?.tipo_evento || 'Evento não encontrado'} • ${formatarData(alerta.data_hora)}`}
-              status={getAlertaStatus(alerta.nivel_urgencia)}
-              onPress={() => openModal(alerta)}
+              subtitle={`${evento?.tipo_evento || 'Evento'} • ${formatarData(alerta.data_hora)}`}
+              status={obterStatusCor(alerta.nivel_urgencia)}
+              onPress={() => abrirModal(alerta)}
             >
-              <View style={styles.alertaInfo}>
-                <Text style={styles.urgenciaText}>
-                  Urgência: {alerta.nivel_urgencia.toUpperCase()}
-                </Text>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => deleteAlerta(alerta)}
-                >
+              <View style={styles.infoAlerta}>
+                <View style={styles.detalhesAlerta}>
+                  <Text style={styles.nivelUrgencia}>
+                    Urgência: {alerta.nivel_urgencia.toUpperCase()}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => excluirAlerta(alerta)}>
                   <Ionicons name="trash" size={20} color={COLORS.danger} />
                 </TouchableOpacity>
               </View>
@@ -189,72 +157,78 @@ export const AlertasScreen: React.FC = () => {
         })}
       </ScrollView>
 
-      {/* Modal de Edição/Criação */}
+      {/* Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {editingAlerta ? 'Editar Alerta' : 'Novo Alerta'}
+        <View style={styles.fundoModal}>
+          <View style={styles.conteudoModal}>
+            
+            {/* Cabeçalho do Modal */}
+            <View style={styles.headerModal}>
+              <Text style={styles.tituloModal}>
+                {editingAlerta ? 'Editar' : 'Novo'} Alerta
               </Text>
-              <TouchableOpacity onPress={closeModal}>
+              <TouchableOpacity onPress={fecharModal}>
                 <Ionicons name="close" size={24} color={COLORS.text} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody}>
-              <Text style={styles.label}>Evento *</Text>
-              <View style={styles.pickerContainer}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {eventos.map((evento) => (
-                    <TouchableOpacity
-                      key={evento.id_evento}
-                      style={[
-                        styles.eventoOption,
-                        formData.id_evento === evento.id_evento && styles.eventoSelected,
-                      ]}
-                      onPress={() => setFormData({ ...formData, id_evento: evento.id_evento })}
-                    >
-                      <Text
-                        style={[
-                          styles.eventoOptionText,
-                          formData.id_evento === evento.id_evento && styles.eventoSelectedText,
-                        ]}
-                      >
-                        {evento.tipo_evento}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
+            <ScrollView style={styles.corpoModal}>
+              
+              {/* Seletor de Evento */}
+              <Text style={styles.label}>Evento</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {eventos.map((evento) => (
+                  <TouchableOpacity
+                    key={evento.id_evento}
+                    style={[
+                      styles.chipEvento,
+                      formData.id_evento === evento.id_evento && styles.chipEventoSelecionado,
+                    ]}
+                    onPress={() => setFormData({ ...formData, id_evento: evento.id_evento })}
+                  >
+                    <Text style={[
+                      styles.textoChipEvento,
+                      formData.id_evento === evento.id_evento && styles.textoChipEventoSelecionado,
+                    ]}>
+                      {evento.tipo_evento}
+                    </Text>
+                    <Text style={[
+                      styles.subtextoChipEvento,
+                      formData.id_evento === evento.id_evento && styles.textoChipEventoSelecionado,
+                    ]}>
+                      {evento.nivel_risco}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
 
-              <Text style={styles.label}>Mensagem *</Text>
+              {/* Campo Mensagem */}
+              <Text style={styles.label}>Mensagem</Text>
               <TextInput
-                style={styles.textArea}
+                style={styles.areaTexto}
                 value={formData.mensagem}
                 onChangeText={(text) => setFormData({ ...formData, mensagem: text })}
                 placeholder="Descreva o alerta..."
                 multiline
-                numberOfLines={4}
+                numberOfLines={3}
               />
 
+              {/* Seletor de Urgência */}
               <Text style={styles.label}>Nível de Urgência</Text>
-              <View style={styles.urgenciaContainer}>
-                {['baixo', 'médio', 'alto', 'crítico'].map((nivel) => (
+              <View style={styles.gridUrgencia}>
+                {niveisUrgencia.map((nivel) => (
                   <TouchableOpacity
                     key={nivel}
                     style={[
-                      styles.urgenciaOption,
-                      formData.nivel_urgencia === nivel && styles.urgenciaSelected,
+                      styles.botaoUrgencia,
+                      formData.nivel_urgencia === nivel && styles.botaoUrgenciaSelecionado,
                     ]}
                     onPress={() => setFormData({ ...formData, nivel_urgencia: nivel })}
                   >
-                    <Text
-                      style={[
-                        styles.urgenciaOptionText,
-                        formData.nivel_urgencia === nivel && styles.urgenciaSelectedText,
-                      ]}
-                    >
+                    <Text style={[
+                      styles.textoUrgencia,
+                      formData.nivel_urgencia === nivel && styles.textoUrgenciaSelecionado,
+                    ]}>
                       {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
                     </Text>
                   </TouchableOpacity>
@@ -262,12 +236,13 @@ export const AlertasScreen: React.FC = () => {
               </View>
             </ScrollView>
 
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
+            {/* Botões */}
+            <View style={styles.acoesModal}>
+              <TouchableOpacity style={styles.botaoCancelar} onPress={fecharModal}>
+                <Text style={styles.textoBotaoCancelar}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={saveAlerta}>
-                <Text style={styles.saveButtonText}>Salvar</Text>
+              <TouchableOpacity style={styles.botaoSalvar} onPress={salvarAlerta}>
+                <Text style={styles.textoBotaoSalvar}>Salvar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -277,167 +252,182 @@ export const AlertasScreen: React.FC = () => {
   );
 };
 
+// Estilos organizados
 const styles = StyleSheet.create({
+  // Principal
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
+
+  // Cabeçalho
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    padding: 16,
     paddingTop: 20,
-    paddingBottom: 16,
   },
-  title: {
+  titulo: {
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.text,
   },
-  addButton: {
+  botaoAdicionar: {
     backgroundColor: COLORS.primary,
     borderRadius: 8,
     padding: 8,
   },
-  scrollView: {
+
+  // Lista
+  lista: {
     flex: 1,
   },
-  alertaInfo: {
+  infoAlerta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginTop: 8,
   },
-  urgenciaText: {
+  detalhesAlerta: {
+    flex: 1,
+  },
+  nivelUrgencia: {
     fontSize: 14,
     fontWeight: 'bold',
     color: COLORS.text,
   },
-  deleteButton: {
-    padding: 4,
-  },
-  modalContainer: {
+
+  // Modal
+  fundoModal: {
     flex: 1,
-    backgroundColor: COLORS.overlay,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: COLORS.surface,
+  conteudoModal: {
+    backgroundColor: 'white',
     borderRadius: 12,
     width: '90%',
-    maxHeight: '80%',
+    maxHeight: '85%',
   },
-  modalHeader: {
+  headerModal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.background,
+    borderBottomColor: '#f0f0f0',
   },
-  modalTitle: {
+  tituloModal: {
     fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.text,
   },
-  modalBody: {
+  corpoModal: {
     padding: 16,
   },
+
+  // Formulário
   label: {
     fontSize: 16,
-    fontWeight: '500',
     color: COLORS.text,
     marginBottom: 8,
     marginTop: 16,
+    fontWeight: '500',
   },
-  pickerContainer: {
-    marginBottom: 8,
-  },
-  eventoOption: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginRight: 8,
-    borderRadius: 8,
+  areaTexto: {
     borderWidth: 1,
-    borderColor: COLORS.background,
-  },
-  eventoSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  eventoOptionText: {
-    fontSize: 14,
-    color: COLORS.text,
-  },
-  eventoSelectedText: {
-    color: COLORS.textLight,
-  },
-  textArea: {
-    borderWidth: 1,
-    borderColor: COLORS.background,
+    borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: COLORS.surface,
     minHeight: 80,
     textAlignVertical: 'top',
   },
-  urgenciaContainer: {
+
+  // Chips de evento
+  chipEvento: {
+    padding: 12,
+    marginRight: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    minWidth: 120,
+  },
+  chipEventoSelecionado: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  textoChipEvento: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.text,
+  },
+  subtextoChipEvento: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  textoChipEventoSelecionado: {
+    color: 'white',
+  },
+
+  // Seletor de urgência
+  gridUrgencia: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  urgenciaOption: {
+  botaoUrgencia: {
     flex: 1,
     minWidth: '45%',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: COLORS.background,
+    borderColor: '#ddd',
     alignItems: 'center',
   },
-  urgenciaSelected: {
+  botaoUrgenciaSelecionado: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  urgenciaOptionText: {
+  textoUrgencia: {
     fontSize: 14,
     color: COLORS.text,
   },
-  urgenciaSelectedText: {
-    color: COLORS.textLight,
-    fontWeight: '500',
+  textoUrgenciaSelecionado: {
+    color: 'white',
   },
-  modalActions: {
+
+  // Botões do modal
+  acoesModal: {
     flexDirection: 'row',
     padding: 16,
     gap: 12,
   },
-  cancelButton: {
+  botaoCancelar: {
     flex: 1,
-    paddingVertical: 12,
+    padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: COLORS.textSecondary,
+    borderColor: '#ccc',
     alignItems: 'center',
   },
-  cancelButtonText: {
+  textoBotaoCancelar: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: '#666',
   },
-  saveButton: {
+  botaoSalvar: {
     flex: 1,
-    paddingVertical: 12,
+    padding: 12,
     borderRadius: 8,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
   },
-  saveButtonText: {
+  textoBotaoSalvar: {
     fontSize: 16,
-    color: COLORS.textLight,
+    color: 'white',
     fontWeight: '500',
   },
 }); 

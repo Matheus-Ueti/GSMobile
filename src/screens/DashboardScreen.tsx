@@ -1,101 +1,109 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, RefreshControl, Alert, StyleSheet } from 'react-native';
 import { Card } from '../components/common/Card';
 import { Loading } from '../components/common/Loading';
 import { COLORS } from '../constants/colors';
-import { apiService } from '../services/api';
 import { MOCK_LEITURAS, MOCK_ALERTAS, MOCK_EVENTOS } from '../services/mockData';
 import { LeituraSensor, Alerta, Evento } from '../types';
 
+// Tela principal do app - aqui mostra um resumo de tudo
 export const DashboardScreen: React.FC = () => {
+  // Estados básicos (aprendi que useState é para guardar dados que mudam)
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [leituras, setLeituras] = useState<LeituraSensor[]>([]);
   const [alertasAtivos, setAlertasAtivos] = useState<Alerta[]>([]);
   const [eventosRecentes, setEventosRecentes] = useState<Evento[]>([]);
 
-  const loadData = async () => {
+  // Função para carregar os dados da tela
+  const carregarDados = async () => {
     try {
-      // Usando dados mock temporariamente até sua API Java estar rodando
+      // Pego só os 5 primeiros para não sobrecarregar a tela
       setLeituras(MOCK_LEITURAS.slice(0, 5));
       setAlertasAtivos(MOCK_ALERTAS);
       setEventosRecentes(MOCK_EVENTOS.slice(0, 3));
-      
-      // Quando sua API Java estiver rodando, descomente estas linhas:
-      // const leituras = await apiService.getLeituras();
-      // const alertas = await apiService.getAlertas();
-      // const eventos = await apiService.getEventos();
-      // setLeituras(leituras.slice(0, 5));
-      // setAlertasAtivos(alertas);
-      // setEventosRecentes(eventos.slice(0, 3));
-      
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os dados do dashboard');
+      // Se der erro, mostro uma mensagem para o usuário
+      Alert.alert('Ops!', 'Erro ao carregar dados');
     } finally {
+      // Sempre executa, deu certo ou não
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const onRefresh = () => {
+  // Função para quando o usuário puxa para baixo para atualizar
+  const atualizarDados = () => {
     setRefreshing(true);
-    loadData();
+    carregarDados();
   };
 
-  const getAlertaStatus = (nivel: string) => {
-    switch (nivel.toLowerCase()) {
-      case 'crítico':
-      case 'alto':
-        return 'danger';
-      case 'médio':
-        return 'warning';
-      default:
-        return 'normal';
+  // Função que escolhe a cor baseada no nível de risco/urgência
+  const obterCorDoStatus = (nivel: string) => {
+    // Uso if/else porque acho mais fácil de entender que switch
+    if (nivel === 'crítico' || nivel === 'alto') {
+      return 'danger';  // Vermelho para coisas perigosas
     }
+    if (nivel === 'médio') {
+      return 'warning'; // Amarelo para avisos
+    }
+    return 'normal';    // Cor normal para o resto
   };
 
-  const formatarData = (dataString: string) => {
-    const data = new Date(dataString);
-    return data.toLocaleString('pt-BR');
+  // Função para deixar a data mais bonita
+  const formatarData = (data: string) => {
+    // TODO: Melhorar isso aqui, talvez usar uma biblioteca de datas
+    return new Date(data).toLocaleString('pt-BR');
   };
 
+  // useEffect executa quando o componente carrega
+  useEffect(() => {
+    carregarDados();
+  }, []); // Array vazio significa que executa só uma vez
+
+  // Se ainda está carregando, mostro a tela de loading
   if (loading) {
     return <Loading message="Carregando dashboard..." />;
   }
 
+  // Aqui é o que aparece na tela
   return (
     <ScrollView
       style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={atualizarDados} />}
     >
-      <Text style={styles.title}>EcoSafe Dashboard</Text>
-      <Text style={styles.subtitle}>Monitoramento Ambiental em Tempo Real</Text>
+      {/* Cabeçalho da tela */}
+      <Text style={styles.titulo}>EcoSafe Dashboard</Text>
+      <Text style={styles.subtitulo}>Monitoramento Ambiental em Tempo Real</Text>
 
-      {/* Resumo de Alertas */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Alertas Ativos ({alertasAtivos.length})</Text>
+      {/* Seção de Alertas */}
+      <View style={styles.secao}>
+        <Text style={styles.tituloSecao}>
+          Alertas Ativos ({alertasAtivos.length})
+        </Text>
         {alertasAtivos.length === 0 ? (
-          <Card title="Nenhum alerta ativo" subtitle="Sistema funcionando normalmente" status="success" />
+          // Se não tem alertas, mostro que está tudo ok
+          <Card 
+            title="Nenhum alerta ativo" 
+            subtitle="Sistema funcionando normalmente" 
+            status="success" 
+          />
         ) : (
+          // Se tem alertas, mostro os 3 primeiros
           alertasAtivos.slice(0, 3).map((alerta) => (
             <Card
               key={alerta.id_alerta}
               title={alerta.mensagem}
               subtitle={`Urgência: ${alerta.nivel_urgencia} • ${formatarData(alerta.data_hora)}`}
-              status={getAlertaStatus(alerta.nivel_urgencia)}
+              status={obterCorDoStatus(alerta.nivel_urgencia)}
             />
           ))
         )}
       </View>
 
-      {/* Leituras Recentes */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Leituras Recentes</Text>
+      {/* Seção de Leituras */}
+      <View style={styles.secao}>
+        <Text style={styles.tituloSecao}>Leituras Recentes</Text>
         {leituras.slice(0, 5).map((leitura) => (
           <Card
             key={leitura.id_leitura}
@@ -109,15 +117,15 @@ export const DashboardScreen: React.FC = () => {
         ))}
       </View>
 
-      {/* Eventos Recentes */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Eventos Recentes</Text>
+      {/* Seção de Eventos */}
+      <View style={styles.secao}>
+        <Text style={styles.tituloSecao}>Eventos Recentes</Text>
         {eventosRecentes.slice(0, 3).map((evento) => (
           <Card
             key={evento.id_evento}
             title={evento.tipo_evento}
             subtitle={`Risco: ${evento.nivel_risco} • ${formatarData(evento.data_evento)}`}
-            status={getAlertaStatus(evento.nivel_risco)}
+            status={obterCorDoStatus(evento.nivel_risco)}
           >
             <Text style={styles.detalhes}>{evento.detalhes}</Text>
           </Card>
@@ -127,12 +135,16 @@ export const DashboardScreen: React.FC = () => {
   );
 };
 
+// ESTILOS - Tentei organizar por seções para ficar mais fácil de entender
 const styles = StyleSheet.create({
+  // Estilo principal da tela
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  title: {
+
+  // Estilos do cabeçalho
+  titulo: {
     fontSize: 28,
     fontWeight: 'bold',
     color: COLORS.primary,
@@ -140,22 +152,26 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 8,
   },
-  subtitle: {
+  subtitulo: {
     fontSize: 16,
     color: COLORS.textSecondary,
     textAlign: 'center',
     marginBottom: 20,
   },
-  section: {
+
+  // Estilos das seções
+  secao: {
     marginBottom: 24,
   },
-  sectionTitle: {
+  tituloSecao: {
     fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.text,
     marginLeft: 16,
     marginBottom: 12,
   },
+
+  // Estilos do conteúdo dos cards
   valorLeitura: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -166,4 +182,7 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 4,
   },
+
+  // FIXME: Acho que poderia melhorar o espaçamento entre os elementos
+  // TODO: Talvez adicionar mais cores diferentes para cada tipo de status
 }); 

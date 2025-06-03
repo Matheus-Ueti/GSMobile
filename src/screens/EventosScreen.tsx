@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, TextInput, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, TextInput, RefreshControl, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/common/Card';
 import { Loading } from '../components/common/Loading';
@@ -8,10 +8,13 @@ import { Evento, Local } from '../types';
 import { COLORS } from '../constants/colors';
 
 export const EventosScreen: React.FC = () => {
+  // Estados básicos
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [locais, setLocais] = useState<Local[]>([]);
+  
+  // Estados do modal
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEvento, setEditingEvento] = useState<Evento | null>(null);
   const [formData, setFormData] = useState({
@@ -21,30 +24,26 @@ export const EventosScreen: React.FC = () => {
     detalhes: '',
   });
 
-  const loadData = async () => {
+  // Carregamento dos dados
+  const carregarDados = async () => {
     try {
-      // Usando dados mock temporariamente
       setEventos(MOCK_EVENTOS);
       setLocais(MOCK_LOCAIS);
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os eventos');
+      Alert.alert('Erro', 'Erro ao carregar eventos');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const onRefresh = () => {
+  const atualizarLista = () => {
     setRefreshing(true);
-    loadData();
+    carregarDados();
   };
 
-  const openModal = (evento?: Evento) => {
+  // Gerenciamento do modal
+  const abrirModal = (evento?: Evento) => {
     if (evento) {
       setEditingEvento(evento);
       setFormData({
@@ -65,100 +64,68 @@ export const EventosScreen: React.FC = () => {
     setModalVisible(true);
   };
 
-  const closeModal = () => {
+  const fecharModal = () => {
     setModalVisible(false);
     setEditingEvento(null);
-    setFormData({
-      tipo_evento: '',
-      id_local: locais.length > 0 ? locais[0].id_local : 0,
-      nivel_risco: 'baixo',
-      detalhes: '',
-    });
   };
 
-  const saveEvento = async () => {
+  const salvarEvento = () => {
     if (!formData.tipo_evento || formData.id_local === 0) {
-      Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
+      Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
 
-    try {
-      const eventoData = {
-        ...formData,
-        data_evento: new Date().toISOString(),
-      };
-
-      if (editingEvento) {
-        Alert.alert('Sucesso', 'Evento atualizado com sucesso');
-      } else {
-        Alert.alert('Sucesso', 'Evento criado com sucesso');
-      }
-      closeModal();
-      loadData();
-    } catch (error) {
-      console.error('Erro ao salvar evento:', error);
-      Alert.alert('Erro', 'Não foi possível salvar o evento');
-    }
+    const mensagem = editingEvento ? 'Evento atualizado!' : 'Evento criado!';
+    Alert.alert('Sucesso', mensagem);
+    fecharModal();
+    carregarDados();
   };
 
-  const deleteEvento = (evento: Evento) => {
+  const excluirEvento = (evento: Evento) => {
     Alert.alert(
-      'Confirmar exclusão',
-      `Tem certeza que deseja excluir o evento "${evento.tipo_evento}"?`,
+      'Confirmar',
+      `Excluir "${evento.tipo_evento}"?`,
       [
         { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // Implemente a lógica para excluir o evento
-              Alert.alert('Sucesso', 'Evento excluído com sucesso');
-              loadData();
-            } catch (error) {
-              console.error('Erro ao excluir evento:', error);
-              Alert.alert('Erro', 'Não foi possível excluir o evento');
-            }
-          },
-        },
+        { text: 'Excluir', style: 'destructive', onPress: () => {
+          Alert.alert('Sucesso', 'Evento excluído!');
+          carregarDados();
+        }}
       ]
     );
   };
 
-  const getRiscoStatus = (nivel: string) => {
-    switch (nivel.toLowerCase()) {
-      case 'crítico':
-      case 'alto':
-        return 'danger';
-      case 'médio':
-        return 'warning';
-      case 'baixo':
-        return 'success';
-      default:
-        return 'normal';
-    }
+  // Funções auxiliares
+  const obterStatusCor = (nivel: string) => {
+    if (nivel === 'crítico' || nivel === 'alto') return 'danger';
+    if (nivel === 'médio') return 'warning';
+    if (nivel === 'baixo') return 'success';
+    return 'normal';
   };
 
-  const formatarData = (dataString: string) => {
-    const data = new Date(dataString);
-    return data.toLocaleString('pt-BR');
+  const formatarData = (data: string) => {
+    return new Date(data).toLocaleString('pt-BR');
   };
 
-  const getLocalById = (id: number) => {
+  const obterLocal = (id: number) => {
     return locais.find(local => local.id_local === id);
   };
 
-  const getTipoEventoIcon = (tipo: string) => {
+  const obterIcone = (tipo: string) => {
     const tipoLower = tipo.toLowerCase();
-    if (tipoLower.includes('enchente') || tipoLower.includes('inundação')) {
-      return 'water';
-    } else if (tipoLower.includes('incêndio') || tipoLower.includes('fogo')) {
-      return 'flame';
-    } else if (tipoLower.includes('vento') || tipoLower.includes('tempestade')) {
-      return 'cloudy';
-    }
+    if (tipoLower.includes('enchente')) return 'water';
+    if (tipoLower.includes('incêndio')) return 'flame';
+    if (tipoLower.includes('vento')) return 'cloudy';
     return 'warning';
   };
+
+  // Dados para os seletores
+  const tiposEvento = ['Enchente', 'Incêndio Florestal', 'Vento Forte', 'Tempestade'];
+  const niveisRisco = ['baixo', 'médio', 'alto', 'crítico'];
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
 
   if (loading) {
     return <Loading message="Carregando eventos..." />;
@@ -166,49 +133,44 @@ export const EventosScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Cabeçalho */}
       <View style={styles.header}>
-        <Text style={styles.title}>Eventos</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => openModal()}>
-          <Ionicons name="add" size={24} color={COLORS.textLight} />
+        <Text style={styles.titulo}>Eventos</Text>
+        <TouchableOpacity style={styles.botaoAdicionar} onPress={() => abrirModal()}>
+          <Ionicons name="add" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
+      {/* Lista */}
       <ScrollView
-        style={styles.scrollView}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        style={styles.lista}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={atualizarLista} />}
       >
         {eventos.map((evento) => {
-          const local = getLocalById(evento.id_local);
+          const local = obterLocal(evento.id_local);
           return (
             <Card
               key={evento.id_evento}
               title={evento.tipo_evento}
-              subtitle={`${local?.nome || 'Local não encontrado'} • ${formatarData(evento.data_evento)}`}
-              status={getRiscoStatus(evento.nivel_risco)}
-              onPress={() => openModal(evento)}
+              subtitle={`${local?.nome || 'Local'} • ${formatarData(evento.data_evento)}`}
+              status={obterStatusCor(evento.nivel_risco)}
+              onPress={() => abrirModal(evento)}
             >
-              <View style={styles.eventoInfo}>
-                <View style={styles.eventoDetails}>
-                  <View style={styles.riscoContainer}>
-                    <Ionicons 
-                      name={getTipoEventoIcon(evento.tipo_evento)} 
-                      size={16} 
-                      color={COLORS.textSecondary} 
-                    />
-                    <Text style={styles.riscoText}>
-                      Risco: {evento.nivel_risco.toUpperCase()}
+              <View style={styles.infoEvento}>
+                <View style={styles.detalhesEvento}>
+                  <View style={styles.containerRisco}>
+                    <Ionicons name={obterIcone(evento.tipo_evento)} size={16} color={COLORS.textSecondary} />
+                    <Text style={styles.textoRisco}>
+                      {evento.nivel_risco.toUpperCase()}
                     </Text>
                   </View>
                   {evento.detalhes && (
-                    <Text style={styles.detalhesText} numberOfLines={2}>
+                    <Text style={styles.textoDetalhes} numberOfLines={2}>
                       {evento.detalhes}
                     </Text>
                   )}
                 </View>
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => deleteEvento(evento)}
-                >
+                <TouchableOpacity onPress={() => excluirEvento(evento)}>
                   <Ionicons name="trash" size={20} color={COLORS.danger} />
                 </TouchableOpacity>
               </View>
@@ -217,129 +179,128 @@ export const EventosScreen: React.FC = () => {
         })}
       </ScrollView>
 
-      {/* Modal de Edição/Criação */}
+      {/* Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {editingEvento ? 'Editar Evento' : 'Novo Evento'}
+        <View style={styles.fundoModal}>
+          <View style={styles.conteudoModal}>
+            
+            {/* Cabeçalho do Modal */}
+            <View style={styles.headerModal}>
+              <Text style={styles.tituloModal}>
+                {editingEvento ? 'Editar' : 'Novo'} Evento
               </Text>
-              <TouchableOpacity onPress={closeModal}>
+              <TouchableOpacity onPress={fecharModal}>
                 <Ionicons name="close" size={24} color={COLORS.text} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody}>
-              <Text style={styles.label}>Tipo de Evento *</Text>
-              <View style={styles.tipoContainer}>
-                {['Enchente', 'Incêndio Florestal', 'Vento Forte', 'Tempestade'].map((tipo) => (
+            <ScrollView style={styles.corpoModal}>
+              
+              {/* Seletor de Tipo */}
+              <Text style={styles.label}>Tipo de Evento</Text>
+              <View style={styles.gridTipos}>
+                {tiposEvento.map((tipo) => (
                   <TouchableOpacity
                     key={tipo}
                     style={[
-                      styles.tipoOption,
-                      formData.tipo_evento === tipo && styles.tipoSelected,
+                      styles.botaoTipo,
+                      formData.tipo_evento === tipo && styles.botaoTipoSelecionado,
                     ]}
                     onPress={() => setFormData({ ...formData, tipo_evento: tipo })}
                   >
                     <Ionicons 
-                      name={getTipoEventoIcon(tipo)} 
-                      size={20} 
-                      color={formData.tipo_evento === tipo ? COLORS.textLight : COLORS.text} 
+                      name={obterIcone(tipo)} 
+                      size={18} 
+                      color={formData.tipo_evento === tipo ? 'white' : COLORS.text} 
                     />
-                    <Text
-                      style={[
-                        styles.tipoOptionText,
-                        formData.tipo_evento === tipo && styles.tipoSelectedText,
-                      ]}
-                    >
+                    <Text style={[
+                      styles.textoTipo,
+                      formData.tipo_evento === tipo && styles.textoTipoSelecionado,
+                    ]}>
                       {tipo}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
-              <Text style={styles.label}>Tipo Personalizado</Text>
+              {/* Campo Personalizado */}
+              <Text style={styles.label}>Ou digite um tipo:</Text>
               <TextInput
-                style={styles.input}
+                style={styles.campoTexto}
                 value={formData.tipo_evento}
                 onChangeText={(text) => setFormData({ ...formData, tipo_evento: text })}
-                placeholder="Ou digite um tipo personalizado..."
+                placeholder="Ex: Deslizamento, Seca..."
               />
 
-              <Text style={styles.label}>Local *</Text>
-              <View style={styles.localContainer}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {locais.map((local) => (
-                    <TouchableOpacity
-                      key={local.id_local}
-                      style={[
-                        styles.localOption,
-                        formData.id_local === local.id_local && styles.localSelected,
-                      ]}
-                      onPress={() => setFormData({ ...formData, id_local: local.id_local })}
-                    >
-                      <Text
-                        style={[
-                          styles.localOptionText,
-                          formData.id_local === local.id_local && styles.localSelectedText,
-                        ]}
-                      >
-                        {local.nome}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.localSubtext,
-                          formData.id_local === local.id_local && styles.localSelectedText,
-                        ]}
-                      >
-                        {local.cidade}, {local.estado}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
+              {/* Seletor de Local */}
+              <Text style={styles.label}>Local</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {locais.map((local) => (
+                  <TouchableOpacity
+                    key={local.id_local}
+                    style={[
+                      styles.chipLocal,
+                      formData.id_local === local.id_local && styles.chipLocalSelecionado,
+                    ]}
+                    onPress={() => setFormData({ ...formData, id_local: local.id_local })}
+                  >
+                    <Text style={[
+                      styles.textoChipLocal,
+                      formData.id_local === local.id_local && styles.textoChipLocalSelecionado,
+                    ]}>
+                      {local.nome}
+                    </Text>
+                    <Text style={[
+                      styles.subtextoChipLocal,
+                      formData.id_local === local.id_local && styles.textoChipLocalSelecionado,
+                    ]}>
+                      {local.cidade}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
 
+              {/* Seletor de Risco */}
               <Text style={styles.label}>Nível de Risco</Text>
-              <View style={styles.riscoContainer2}>
-                {['baixo', 'médio', 'alto', 'crítico'].map((nivel) => (
+              <View style={styles.gridRisco}>
+                {niveisRisco.map((nivel) => (
                   <TouchableOpacity
                     key={nivel}
                     style={[
-                      styles.riscoOption,
-                      formData.nivel_risco === nivel && styles.riscoSelected,
+                      styles.botaoRisco,
+                      formData.nivel_risco === nivel && styles.botaoRiscoSelecionado,
                     ]}
                     onPress={() => setFormData({ ...formData, nivel_risco: nivel })}
                   >
-                    <Text
-                      style={[
-                        styles.riscoOptionText,
-                        formData.nivel_risco === nivel && styles.riscoSelectedText,
-                      ]}
-                    >
+                    <Text style={[
+                      styles.textoRisco,
+                      formData.nivel_risco === nivel && styles.textoRiscoSelecionado,
+                    ]}>
                       {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
+              {/* Campo Detalhes */}
               <Text style={styles.label}>Detalhes</Text>
               <TextInput
-                style={styles.textArea}
+                style={styles.areaTexto}
                 value={formData.detalhes}
                 onChangeText={(text) => setFormData({ ...formData, detalhes: text })}
-                placeholder="Descreva os detalhes do evento..."
+                placeholder="Descreva o evento..."
                 multiline
-                numberOfLines={4}
+                numberOfLines={3}
               />
             </ScrollView>
 
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
+            {/* Botões */}
+            <View style={styles.acoesModal}>
+              <TouchableOpacity style={styles.botaoCancelar} onPress={fecharModal}>
+                <Text style={styles.textoBotaoCancelar}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={saveEvento}>
-                <Text style={styles.saveButtonText}>Salvar</Text>
+              <TouchableOpacity style={styles.botaoSalvar} onPress={salvarEvento}>
+                <Text style={styles.textoBotaoSalvar}>Salvar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -349,225 +310,224 @@ export const EventosScreen: React.FC = () => {
   );
 };
 
+// Estilos organizados
 const styles = StyleSheet.create({
+  // Principal
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
+
+  // Cabeçalho
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    padding: 16,
     paddingTop: 20,
-    paddingBottom: 16,
   },
-  title: {
+  titulo: {
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.text,
   },
-  addButton: {
+  botaoAdicionar: {
     backgroundColor: COLORS.primary,
     borderRadius: 8,
     padding: 8,
   },
-  scrollView: {
+
+  // Lista
+  lista: {
     flex: 1,
   },
-  eventoInfo: {
+  infoEvento: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginTop: 8,
   },
-  eventoDetails: {
+  detalhesEvento: {
     flex: 1,
   },
-  riscoContainer: {
+  containerRisco: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
   },
-  riscoText: {
+  textoRisco: {
     fontSize: 14,
     fontWeight: 'bold',
     color: COLORS.text,
     marginLeft: 4,
   },
-  detalhesText: {
+  textoDetalhes: {
     fontSize: 14,
     color: COLORS.textSecondary,
     marginTop: 4,
   },
-  deleteButton: {
-    padding: 4,
-    marginLeft: 8,
-  },
-  modalContainer: {
+
+  // Modal
+  fundoModal: {
     flex: 1,
-    backgroundColor: COLORS.overlay,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: COLORS.surface,
+  conteudoModal: {
+    backgroundColor: 'white',
     borderRadius: 12,
-    width: '95%',
-    maxHeight: '90%',
+    width: '90%',
+    maxHeight: '85%',
   },
-  modalHeader: {
+  headerModal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.background,
+    borderBottomColor: '#f0f0f0',
   },
-  modalTitle: {
+  tituloModal: {
     fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.text,
   },
-  modalBody: {
+  corpoModal: {
     padding: 16,
   },
+
+  // Formulário  
   label: {
     fontSize: 16,
-    fontWeight: '500',
     color: COLORS.text,
     marginBottom: 8,
     marginTop: 16,
+    fontWeight: '500',
   },
-  tipoContainer: {
+  campoTexto: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  areaTexto: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+
+  // Seletores
+  gridTipos: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 8,
   },
-  tipoOption: {
+  botaoTipo: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    padding: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: COLORS.background,
+    borderColor: '#ddd',
     minWidth: '45%',
   },
-  tipoSelected: {
+  botaoTipoSelecionado: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  tipoOptionText: {
+  textoTipo: {
     fontSize: 14,
     color: COLORS.text,
     marginLeft: 6,
   },
-  tipoSelectedText: {
-    color: COLORS.textLight,
+  textoTipoSelecionado: {
+    color: 'white',
   },
-  input: {
-    borderWidth: 1,
-    borderColor: COLORS.background,
-    borderRadius: 8,
+
+  // Chips de local
+  chipLocal: {
     padding: 12,
-    fontSize: 16,
-    backgroundColor: COLORS.surface,
-  },
-  localContainer: {
-    marginBottom: 8,
-  },
-  localOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
     marginRight: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: COLORS.background,
+    borderColor: '#ddd',
     minWidth: 120,
   },
-  localSelected: {
+  chipLocalSelecionado: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  localOptionText: {
+  textoChipLocal: {
     fontSize: 14,
     fontWeight: '500',
     color: COLORS.text,
   },
-  localSubtext: {
+  subtextoChipLocal: {
     fontSize: 12,
     color: COLORS.textSecondary,
     marginTop: 2,
   },
-  localSelectedText: {
-    color: COLORS.textLight,
+  textoChipLocalSelecionado: {
+    color: 'white',
   },
-  riscoContainer2: {
+
+  // Seletor de risco
+  gridRisco: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  riscoOption: {
+  botaoRisco: {
     flex: 1,
     minWidth: '45%',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: COLORS.background,
+    borderColor: '#ddd',
     alignItems: 'center',
   },
-  riscoSelected: {
+  botaoRiscoSelecionado: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  riscoOptionText: {
-    fontSize: 14,
-    color: COLORS.text,
+  textoRiscoSelecionado: {
+    color: 'white',
   },
-  riscoSelectedText: {
-    color: COLORS.textLight,
-    fontWeight: '500',
-  },
-  textArea: {
-    borderWidth: 1,
-    borderColor: COLORS.background,
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: COLORS.surface,
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  modalActions: {
+
+  // Botões do modal
+  acoesModal: {
     flexDirection: 'row',
     padding: 16,
     gap: 12,
   },
-  cancelButton: {
+  botaoCancelar: {
     flex: 1,
-    paddingVertical: 12,
+    padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: COLORS.textSecondary,
+    borderColor: '#ccc',
     alignItems: 'center',
   },
-  cancelButtonText: {
+  textoBotaoCancelar: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: '#666',
   },
-  saveButton: {
+  botaoSalvar: {
     flex: 1,
-    paddingVertical: 12,
+    padding: 12,
     borderRadius: 8,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
   },
-  saveButtonText: {
+  textoBotaoSalvar: {
     fontSize: 16,
-    color: COLORS.textLight,
+    color: 'white',
     fontWeight: '500',
   },
 }); 

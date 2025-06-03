@@ -1,61 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Modal, TextInput, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, TextInput, RefreshControl, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/common/Card';
 import { Loading } from '../components/common/Loading';
 import { COLORS } from '../constants/colors';
-import { apiService } from '../services/api';
 import { MOCK_SENSORES } from '../services/mockData';
 import { Sensor } from '../types';
 
+type StatusSensor = 'ativo' | 'inativo' | 'manutenção';
+
 export const SensoresScreen: React.FC = () => {
+  // Estados básicos
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [sensores, setSensores] = useState<Sensor[]>([]);
+  
+  // Estados do modal
   const [modalVisible, setModalVisible] = useState(false);
   const [editingSensor, setEditingSensor] = useState<Sensor | null>(null);
   const [formData, setFormData] = useState({
     tipo: '',
     localizacao: '',
     unidade_medida: '',
-    status: 'ativo' as 'ativo' | 'inativo'
+    status: 'ativo' as StatusSensor
   });
 
-  const loadSensores = async () => {
+  // Carregamento dos dados
+  const carregarDados = async () => {
     try {
-      // Usando dados mock temporariamente
       setSensores(MOCK_SENSORES);
-      
-      // Quando sua API Java estiver rodando, descomente esta linha:
-      // const response = await apiService.getSensores();
-      // setSensores(response);
-      
     } catch (error) {
-      console.error('Erro ao carregar sensores:', error);
-      Alert.alert('Erro', 'Não foi possível carregar os sensores');
+      Alert.alert('Erro', 'Erro ao carregar sensores');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    loadSensores();
-  }, []);
-
-  const onRefresh = () => {
+  const atualizarLista = () => {
     setRefreshing(true);
-    loadSensores();
+    carregarDados();
   };
 
-  const openModal = (sensor?: Sensor) => {
+  // Gerenciamento do modal
+  const abrirModal = (sensor?: Sensor) => {
     if (sensor) {
       setEditingSensor(sensor);
       setFormData({
         tipo: sensor.tipo,
         localizacao: sensor.localizacao,
         unidade_medida: sensor.unidade_medida,
-        status: sensor.status,
+        status: sensor.status as StatusSensor,
       });
     } else {
       setEditingSensor(null);
@@ -69,71 +64,53 @@ export const SensoresScreen: React.FC = () => {
     setModalVisible(true);
   };
 
-  const closeModal = () => {
+  const fecharModal = () => {
     setModalVisible(false);
     setEditingSensor(null);
-    setFormData({
-      tipo: '',
-      localizacao: '',
-      unidade_medida: '',
-      status: 'ativo',
-    });
   };
 
-  const saveSensor = async () => {
-    try {
-      if (editingSensor) {
-        // await apiService.updateSensor(editingSensor.id_sensor, formData);
-        Alert.alert('Sucesso', 'Sensor atualizado com sucesso (mock)');
-      } else {
-        // await apiService.createSensor(formData);
-        Alert.alert('Sucesso', 'Sensor criado com sucesso (mock)');
-      }
-      
-      closeModal();
-      loadSensores();
-    } catch (error) {
-      console.error('Erro ao salvar sensor:', error);
-      Alert.alert('Erro', 'Não foi possível salvar o sensor');
+  const salvarSensor = () => {
+    if (!formData.tipo || !formData.localizacao || !formData.unidade_medida) {
+      Alert.alert('Erro', 'Preencha todos os campos');
+      return;
     }
+
+    const mensagem = editingSensor ? 'Sensor atualizado!' : 'Sensor criado!';
+    Alert.alert('Sucesso', mensagem);
+    fecharModal();
+    carregarDados();
   };
 
-  const deleteSensor = (sensor: Sensor) => {
+  const excluirSensor = (sensor: Sensor) => {
     Alert.alert(
-      'Confirmar exclusão',
-      `Deseja realmente excluir o sensor "${sensor.tipo}"?`,
+      'Confirmar',
+      `Excluir sensor "${sensor.tipo}"?`,
       [
         { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // await apiService.deleteSensor(sensor.id_sensor);
-              Alert.alert('Sucesso', 'Sensor excluído com sucesso (mock)');
-              loadSensores();
-            } catch (error) {
-              console.error('Erro ao excluir sensor:', error);
-              Alert.alert('Erro', 'Não foi possível excluir o sensor');
-            }
-          }
-        }
+        { text: 'Excluir', style: 'destructive', onPress: () => {
+          Alert.alert('Sucesso', 'Sensor excluído!');
+          carregarDados();
+        }}
       ]
     );
   };
 
-  const getSensorStatus = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'ativo':
-        return 'success';
-      case 'inativo':
-        return 'danger';
-      case 'manutenção':
-        return 'warning';
-      default:
-        return 'normal';
-    }
+  // Funções auxiliares
+  const obterStatusCor = (status: string) => {
+    if (status === 'ativo') return 'success';
+    if (status === 'inativo') return 'danger';
+    if (status === 'manutenção') return 'warning';
+    return 'normal';
   };
+
+  // Dados para os seletores
+  const tiposSensor = ['Temperatura', 'Umidade', 'Pressão', 'CO2', 'Luz'];
+  const unidadesMedida = ['°C', '%', 'Pa', 'ppm', 'lux', 'mg/L'];
+  const statusOpcoes: StatusSensor[] = ['ativo', 'inativo', 'manutenção'];
+
+  useEffect(() => {
+    carregarDados();
+  }, []);
 
   if (loading) {
     return <Loading message="Carregando sensores..." />;
@@ -141,31 +118,32 @@ export const SensoresScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Cabeçalho */}
       <View style={styles.header}>
-        <Text style={styles.title}>Sensores</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => openModal()}>
-          <Ionicons name="add" size={24} color={COLORS.textLight} />
+        <Text style={styles.titulo}>Sensores</Text>
+        <TouchableOpacity style={styles.botaoAdicionar} onPress={() => abrirModal()}>
+          <Ionicons name="add" size={24} color="white" />
         </TouchableOpacity>
       </View>
 
+      {/* Lista */}
       <ScrollView
-        style={styles.scrollView}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        style={styles.lista}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={atualizarLista} />}
       >
         {sensores.map((sensor) => (
           <Card
             key={sensor.id_sensor}
             title={sensor.tipo}
             subtitle={`${sensor.localizacao} • ${sensor.unidade_medida}`}
-            status={getSensorStatus(sensor.status)}
-            onPress={() => openModal(sensor)}
+            status={obterStatusCor(sensor.status)}
+            onPress={() => abrirModal(sensor)}
           >
-            <View style={styles.sensorActions}>
-              <Text style={styles.statusText}>Status: {sensor.status}</Text>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => deleteSensor(sensor)}
-              >
+            <View style={styles.infoSensor}>
+              <Text style={styles.textoStatus}>
+                Status: {sensor.status.toUpperCase()}
+              </Text>
+              <TouchableOpacity onPress={() => excluirSensor(sensor)}>
                 <Ionicons name="trash" size={20} color={COLORS.danger} />
               </TouchableOpacity>
             </View>
@@ -173,61 +151,110 @@ export const SensoresScreen: React.FC = () => {
         ))}
       </ScrollView>
 
-      {/* Modal de Edição/Criação */}
+      {/* Modal */}
       <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {editingSensor ? 'Editar Sensor' : 'Novo Sensor'}
+        <View style={styles.fundoModal}>
+          <View style={styles.conteudoModal}>
+            
+            {/* Cabeçalho do Modal */}
+            <View style={styles.headerModal}>
+              <Text style={styles.tituloModal}>
+                {editingSensor ? 'Editar' : 'Novo'} Sensor
               </Text>
-              <TouchableOpacity onPress={closeModal}>
+              <TouchableOpacity onPress={fecharModal}>
                 <Ionicons name="close" size={24} color={COLORS.text} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody}>
-              <Text style={styles.label}>Tipo do Sensor *</Text>
+            <ScrollView style={styles.corpoModal}>
+              
+              {/* Tipos Predefinidos */}
+              <Text style={styles.label}>Tipo do Sensor</Text>
+              <View style={styles.gridTipos}>
+                {tiposSensor.map((tipo) => (
+                  <TouchableOpacity
+                    key={tipo}
+                    style={[
+                      styles.botaoTipo,
+                      formData.tipo === tipo && styles.botaoTipoSelecionado,
+                    ]}
+                    onPress={() => setFormData({ ...formData, tipo })}
+                  >
+                    <Text style={[
+                      styles.textoTipo,
+                      formData.tipo === tipo && styles.textoTipoSelecionado,
+                    ]}>
+                      {tipo}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Tipo Personalizado */}
+              <Text style={styles.label}>Ou digite um tipo:</Text>
               <TextInput
-                style={styles.input}
+                style={styles.campoTexto}
                 value={formData.tipo}
                 onChangeText={(text) => setFormData({ ...formData, tipo: text })}
-                placeholder="Ex: Temperatura, Umidade, Pressão..."
+                placeholder="Ex: pH, Oxigênio..."
               />
 
-              <Text style={styles.label}>Localização *</Text>
+              {/* Campo Localização */}
+              <Text style={styles.label}>Localização</Text>
               <TextInput
-                style={styles.input}
+                style={styles.campoTexto}
                 value={formData.localizacao}
                 onChangeText={(text) => setFormData({ ...formData, localizacao: text })}
-                placeholder="Ex: Prédio A - Sala 101"
+                placeholder="Ex: Sala A, Estação 01..."
               />
 
-              <Text style={styles.label}>Unidade de Medida *</Text>
+              {/* Unidades Predefinidas */}
+              <Text style={styles.label}>Unidade de Medida</Text>
+              <View style={styles.gridUnidades}>
+                {unidadesMedida.map((unidade) => (
+                  <TouchableOpacity
+                    key={unidade}
+                    style={[
+                      styles.botaoUnidade,
+                      formData.unidade_medida === unidade && styles.botaoUnidadeSelecionado,
+                    ]}
+                    onPress={() => setFormData({ ...formData, unidade_medida: unidade })}
+                  >
+                    <Text style={[
+                      styles.textoUnidade,
+                      formData.unidade_medida === unidade && styles.textoUnidadeSelecionado,
+                    ]}>
+                      {unidade}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Unidade Personalizada */}
+              <Text style={styles.label}>Ou digite uma unidade:</Text>
               <TextInput
-                style={styles.input}
+                style={styles.campoTexto}
                 value={formData.unidade_medida}
                 onChangeText={(text) => setFormData({ ...formData, unidade_medida: text })}
-                placeholder="Ex: °C, %, mmHg..."
+                placeholder="Ex: m/s, kg/m³..."
               />
 
+              {/* Status */}
               <Text style={styles.label}>Status</Text>
-              <View style={styles.statusContainer}>
-                {['ativo', 'inativo', 'manutenção'].map((status) => (
+              <View style={styles.gridStatus}>
+                {statusOpcoes.map((status) => (
                   <TouchableOpacity
                     key={status}
                     style={[
-                      styles.statusOption,
-                      formData.status === status && styles.statusSelected,
+                      styles.botaoStatus,
+                      formData.status === status && styles.botaoStatusSelecionado,
                     ]}
                     onPress={() => setFormData({ ...formData, status })}
                   >
-                    <Text
-                      style={[
-                        styles.statusOptionText,
-                        formData.status === status && styles.statusSelectedText,
-                      ]}
-                    >
+                    <Text style={[
+                      styles.textoStatus,
+                      formData.status === status && styles.textoStatusSelecionado,
+                    ]}>
                       {status.charAt(0).toUpperCase() + status.slice(1)}
                     </Text>
                   </TouchableOpacity>
@@ -235,12 +262,13 @@ export const SensoresScreen: React.FC = () => {
               </View>
             </ScrollView>
 
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
+            {/* Botões */}
+            <View style={styles.acoesModal}>
+              <TouchableOpacity style={styles.botaoCancelar} onPress={fecharModal}>
+                <Text style={styles.textoBotaoCancelar}>Cancelar</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveButton} onPress={saveSensor}>
-                <Text style={styles.saveButtonText}>Salvar</Text>
+              <TouchableOpacity style={styles.botaoSalvar} onPress={salvarSensor}>
+                <Text style={styles.textoBotaoSalvar}>Salvar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -250,141 +278,196 @@ export const SensoresScreen: React.FC = () => {
   );
 };
 
+// Estilos organizados
 const styles = StyleSheet.create({
+  // Principal
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
+
+  // Cabeçalho
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    padding: 16,
     paddingTop: 20,
-    paddingBottom: 16,
   },
-  title: {
+  titulo: {
     fontSize: 24,
     fontWeight: 'bold',
     color: COLORS.text,
   },
-  addButton: {
+  botaoAdicionar: {
     backgroundColor: COLORS.primary,
     borderRadius: 8,
     padding: 8,
   },
-  scrollView: {
+
+  // Lista
+  lista: {
     flex: 1,
   },
-  sensorActions: {
+  infoSensor: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 8,
   },
-  statusText: {
+  textoStatus: {
     fontSize: 14,
-    color: COLORS.textSecondary,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    color: COLORS.text,
   },
-  deleteButton: {
-    padding: 4,
-  },
-  modalContainer: {
+
+  // Modal
+  fundoModal: {
     flex: 1,
-    backgroundColor: COLORS.overlay,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: COLORS.surface,
+  conteudoModal: {
+    backgroundColor: 'white',
     borderRadius: 12,
     width: '90%',
-    maxHeight: '80%',
+    maxHeight: '85%',
   },
-  modalHeader: {
+  headerModal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.background,
+    borderBottomColor: '#f0f0f0',
   },
-  modalTitle: {
+  tituloModal: {
     fontSize: 20,
     fontWeight: 'bold',
     color: COLORS.text,
   },
-  modalBody: {
+  corpoModal: {
     padding: 16,
   },
+
+  // Formulário
   label: {
     fontSize: 16,
-    fontWeight: '500',
     color: COLORS.text,
     marginBottom: 8,
     marginTop: 16,
+    fontWeight: '500',
   },
-  input: {
+  campoTexto: {
     borderWidth: 1,
-    borderColor: COLORS.background,
+    borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: COLORS.surface,
   },
-  statusContainer: {
+
+  // Seletores
+  gridTipos: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
-  statusOption: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+  botaoTipo: {
+    padding: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: COLORS.background,
+    borderColor: '#ddd',
+    minWidth: '30%',
     alignItems: 'center',
   },
-  statusSelected: {
+  botaoTipoSelecionado: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  statusOptionText: {
+  textoTipo: {
     fontSize: 14,
     color: COLORS.text,
   },
-  statusSelectedText: {
-    color: COLORS.textLight,
-    fontWeight: '500',
+  textoTipoSelecionado: {
+    color: 'white',
   },
-  modalActions: {
+
+  gridUnidades: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  botaoUnidade: {
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    minWidth: '25%',
+    alignItems: 'center',
+  },
+  botaoUnidadeSelecionado: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  textoUnidade: {
+    fontSize: 14,
+    color: COLORS.text,
+  },
+  textoUnidadeSelecionado: {
+    color: 'white',
+  },
+
+  gridStatus: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  botaoStatus: {
+    flex: 1,
+    minWidth: '30%',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignItems: 'center',
+  },
+  botaoStatusSelecionado: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  textoStatusSelecionado: {
+    color: 'white',
+  },
+
+  // Botões do modal
+  acoesModal: {
     flexDirection: 'row',
     padding: 16,
     gap: 12,
   },
-  cancelButton: {
+  botaoCancelar: {
     flex: 1,
-    paddingVertical: 12,
+    padding: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: COLORS.textSecondary,
+    borderColor: '#ccc',
     alignItems: 'center',
   },
-  cancelButtonText: {
+  textoBotaoCancelar: {
     fontSize: 16,
-    color: COLORS.textSecondary,
+    color: '#666',
   },
-  saveButton: {
+  botaoSalvar: {
     flex: 1,
-    paddingVertical: 12,
+    padding: 12,
     borderRadius: 8,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
   },
-  saveButtonText: {
+  textoBotaoSalvar: {
     fontSize: 16,
-    color: COLORS.textLight,
+    color: 'white',
     fontWeight: '500',
   },
 }); 

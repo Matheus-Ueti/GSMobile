@@ -63,16 +63,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (result.success && result.user) {
         setUsuario(result.user);
         console.log('🎉 Login bem-sucedido:', result.user.email);
+        setCarregando(false);
         return true;
       } else {
         console.error('❌ Falha no login:', result.message);
+        setCarregando(false);
         return false;
       }
     } catch (error) {
       console.error('❌ Erro no login:', error);
-      return false;
-    } finally {
       setCarregando(false);
+      return false;
     }
   };
 
@@ -85,16 +86,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (result.success && result.user) {
         setUsuario(result.user);
         console.log('🎉 Cadastro bem-sucedido:', result.user.email);
+        setCarregando(false);
         return true;
       } else {
         console.error('❌ Falha no cadastro:', result.message);
+        setCarregando(false);
         return false;
       }
     } catch (error) {
       console.error('❌ Erro no cadastro:', error);
-      return false;
-    } finally {
       setCarregando(false);
+      return false;
     }
   };
 
@@ -105,7 +107,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('🚪 Logout realizado com sucesso');
     } catch (error) {
       console.error('Erro no logout:', error);
-      // Mesmo com erro, limpa o estado local
       setUsuario(null);
     }
   };

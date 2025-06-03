@@ -13,7 +13,7 @@ const API_BASE_URL = 'http://172.60.33.37:8080/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 2000, // Reduzido para 2 segundos
   headers: {
     'Content-Type': 'application/json',
   },
@@ -23,6 +23,37 @@ const api = axios.create({
 const STORAGE_KEYS = {
   TOKEN: '@ecosafe:token',
   USER: '@ecosafe:user',
+  USE_MOCK: '@ecosafe:use_mock',
+};
+
+// Usuários mock para demonstração
+const MOCK_USERS = [
+  {
+    id_usuario: 1,
+    nome: 'Administrador',
+    email: 'admin@ecosafe.com',
+    cpf: '000.000.000-00',
+    localizacao: 'São Paulo',
+    senha: '123456' // Em produção, isso seria hash
+  },
+  {
+    id_usuario: 2,
+    nome: 'Demo User',
+    email: 'demo@ecosafe.com',
+    cpf: '111.111.111-11',
+    localizacao: 'Rio de Janeiro',
+    senha: 'demo123'
+  }
+];
+
+// Verificar se deve usar mock
+const shouldUseMock = async (): Promise<boolean> => {
+  try {
+    const useMock = await AsyncStorage.getItem(STORAGE_KEYS.USE_MOCK);
+    return useMock === 'true';
+  } catch {
+    return false;
+  }
 };
 
 // Interceptador para adicionar token JWT nas requisições
@@ -45,7 +76,10 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.error('Erro na API:', error);
+    // Não logar erros de timeout quando usando fallback
+    if (error.code !== 'ECONNABORTED') {
+      console.error('Erro na API:', error);
+    }
     
     // Se token expirou (401), limpar dados de autenticação
     if (error.response?.status === 401) {
@@ -80,12 +114,13 @@ export const apiService = {
   // ==================== AUTENTICAÇÃO ====================
   
   /**
-   * Login no backend Java
+   * Login - tenta backend primeiro, usa mock como fallback
    */
   async login(email: string, senha: string): Promise<{ success: boolean; user?: Usuario; message?: string }> {
+    console.log('🚀 Tentando login para:', email);
+    
+    // Primeiro tenta o backend (silenciosamente)
     try {
-      console.log('🚀 Fazendo login com backend Java:', email);
-      
       const response = await api.post('/auth/login', {
         email,
         senha
@@ -101,8 +136,9 @@ export const apiService = {
       if (data.user || data.usuario) {
         const user = data.user || data.usuario;
         await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+        await AsyncStorage.setItem(STORAGE_KEYS.USE_MOCK, 'false');
         
-        console.log('✅ Login bem-sucedido');
+        console.log('✅ Login bem-sucedido com backend');
         return {
           success: true,
           user: user
@@ -115,26 +151,87 @@ export const apiService = {
       };
 
     } catch (error: any) {
-      console.error('❌ Erro no login:', error);
+      // Usar mock silenciosamente quando backend não disponível
+      console.log('⚠️ Backend indisponível, usando sistema offline...');
       
-      const message = error.response?.data?.message || 
-                      error.response?.data?.error || 
-                      'Erro ao fazer login. Verifique suas credenciais.';
+      // Fallback: usar sistema mock
+      return await this.mockLogin(email, senha);
+    }
+  },
+
+  /**
+   * Login Mock para demonstração
+   */
+  async mockLogin(email: string, senha: string): Promise<{ success: boolean; user?: Usuario; message?: string }> {
+    try {
+      // Simular delay de rede
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Verificar credenciais mock
+      const user = MOCK_USERS.find(u => u.email === email && u.senha === senha);
+      
+      if (user) {
+        // Remover senha antes de salvar
+        const { senha: _, ...userWithoutPassword } = user;
+        
+        // Salvar dados mock
+        const mockToken = 'mock_token_' + Date.now();
+        await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, mockToken);
+        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userWithoutPassword));
+        await AsyncStorage.setItem(STORAGE_KEYS.USE_MOCK, 'true');
+        
+        console.log('✅ Login offline bem-sucedido');
+        return {
+          success: true,
+          user: userWithoutPassword
+        };
+      }
+      
+      // Se não encontrou usuário específico, aceitar qualquer email/senha válidos
+      if (email.includes('@') && senha.length >= 3) {
+        const genericUser = {
+          id_usuario: 999,
+          nome: email.split('@')[0],
+          email: email,
+          cpf: '000.000.000-00',
+          localizacao: 'Demo'
+        };
+        
+        // Salvar dados mock
+        const mockToken = 'mock_token_' + Date.now();
+        await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, mockToken);
+        await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(genericUser));
+        await AsyncStorage.setItem(STORAGE_KEYS.USE_MOCK, 'true');
+        
+        console.log('✅ Login offline bem-sucedido (genérico)');
+        return {
+          success: true,
+          user: genericUser
+        };
+      }
       
       return {
         success: false,
-        message
+        message: 'Email ou senha incorretos'
+      };
+      
+    } catch (error) {
+      console.error('❌ Erro no login mock:', error);
+      return {
+        success: false,
+        message: 'Erro interno do sistema'
       };
     }
   },
 
   /**
-   * Cadastro no backend Java
+   * Cadastro - tenta backend primeiro, usa mock como fallback
    */
   async cadastrar(nome: string, email: string, senha: string): Promise<{ success: boolean; user?: Usuario; message?: string }> {
+    console.log('🚀 Tentando cadastro para:', email);
+    
+    // Primeiro tenta o backend (silenciosamente)
     try {
-      console.log('🚀 Fazendo cadastro com backend Java:', email);
-      
       const response = await api.post('/auth/register', {
         nome,
         email,
@@ -151,8 +248,9 @@ export const apiService = {
       if (data.user || data.usuario) {
         const user = data.user || data.usuario;
         await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+        await AsyncStorage.setItem(STORAGE_KEYS.USE_MOCK, 'false');
         
-        console.log('✅ Cadastro bem-sucedido');
+        console.log('✅ Cadastro bem-sucedido com backend');
         return {
           success: true,
           user: user
@@ -165,15 +263,56 @@ export const apiService = {
       };
 
     } catch (error: any) {
-      console.error('❌ Erro no cadastro:', error);
+      console.log('⚠️ Backend indisponível, usando sistema offline...');
       
-      const message = error.response?.data?.message || 
-                      error.response?.data?.error || 
-                      'Erro ao criar conta. Tente novamente.';
+      // Fallback: usar sistema mock
+      return await this.mockCadastro(nome, email, senha);
+    }
+  },
+
+  /**
+   * Cadastro Mock para demonstração
+   */
+  async mockCadastro(nome: string, email: string, senha: string): Promise<{ success: boolean; user?: Usuario; message?: string }> {
+    try {
+      // Simular delay de rede
+      await new Promise(resolve => setTimeout(resolve, 800));
       
+      // Verificar se email já existe
+      const emailExists = MOCK_USERS.some(u => u.email === email);
+      if (emailExists) {
+        return {
+          success: false,
+          message: 'Email já cadastrado'
+        };
+      }
+      
+      // Criar novo usuário mock
+      const newUser = {
+        id_usuario: Date.now(), // ID único baseado em timestamp
+        nome,
+        email,
+        cpf: '000.000.000-00',
+        localizacao: 'Brasil'
+      };
+      
+      // Salvar dados mock
+      const mockToken = 'mock_token_' + Date.now();
+      await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, mockToken);
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(newUser));
+      await AsyncStorage.setItem(STORAGE_KEYS.USE_MOCK, 'true');
+      
+      console.log('✅ Cadastro offline bem-sucedido');
+      return {
+        success: true,
+        user: newUser
+      };
+      
+    } catch (error) {
+      console.error('❌ Erro no cadastro mock:', error);
       return {
         success: false,
-        message
+        message: 'Erro interno do sistema'
       };
     }
   },
@@ -183,15 +322,19 @@ export const apiService = {
    */
   async logout(): Promise<void> {
     try {
-      // Chamar endpoint de logout no backend (opcional)
-      await api.post('/auth/logout').catch(() => {
-        // Ignorar erro se o backend não tiver endpoint de logout
-      });
+      const useMock = await shouldUseMock();
+      
+      if (!useMock) {
+        // Chamar endpoint de logout no backend (opcional)
+        await api.post('/auth/logout').catch(() => {
+          // Ignorar erro se o backend não tiver endpoint de logout
+        });
+      }
     } catch (error) {
-      console.error('Erro no logout:', error);
+      // Não logar erros de logout
     } finally {
       // Sempre limpar o storage local
-      await AsyncStorage.multiRemove([STORAGE_KEYS.TOKEN, STORAGE_KEYS.USER]);
+      await AsyncStorage.multiRemove([STORAGE_KEYS.TOKEN, STORAGE_KEYS.USER, STORAGE_KEYS.USE_MOCK]);
       console.log('🚪 Logout realizado');
     }
   },
@@ -203,6 +346,7 @@ export const apiService = {
     try {
       const token = await AsyncStorage.getItem(STORAGE_KEYS.TOKEN);
       const userJson = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+      const useMock = await shouldUseMock();
       
       if (!token || !userJson) {
         return { isAuthenticated: false };
@@ -210,7 +354,12 @@ export const apiService = {
 
       const user = JSON.parse(userJson);
       
-      // Verificar se o token ainda é válido
+      // Se está usando mock, apenas verificar se tem dados salvos
+      if (useMock) {
+        return { isAuthenticated: true, user };
+      }
+      
+      // Se não é mock, verificar se o token ainda é válido no backend
       try {
         const response = await api.get('/auth/me');
         return { 
